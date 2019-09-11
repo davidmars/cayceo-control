@@ -5,9 +5,10 @@ const electron = require('electron');
 const remote = electron.remote;
 const win = remote.getCurrentWindow();
 
+require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
-window.EVENT_READY="EVENT_READY";
+
 
 
 //conf
@@ -16,16 +17,20 @@ window.conf=new Conf();
 window.conf.serverRoot="https://jukeboxvr.fr"; //
 window.conf.appDirectoryStorageName="jukebox-cayceo/prod";
 
+
 //machine
 const Machine = require('./utils/Machine.js');
 let machine=window.machine=new Machine();
 
-
 machine.on(EVENT_READY,function(){
+
+
 
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
+
+    ui.displaySplashScreen("Bonjour...");
 
     //app infos
     ui.log(`App v: ${electron.remote.app.getVersion()}`);
@@ -42,16 +47,80 @@ machine.on(EVENT_READY,function(){
 
     //------------ Répertoire de stockage-----------------
 
-    var appStorage=machine.appStoragePath;
-    ui.log(`Les fichiers de l'application sont stockés dans ${appStorage}`);
+    ui.log(`Les fichiers de l'application sont stockés dans ${machine.appStoragePath}`);
+
+    //------------- synchro WEB------------------------
+
+    var Sync=require("./utils/Sync");
+    let sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
+
+
+    let started=false;
+
+    sync.on(EVENT_READY,function(err){
+        for(let i=0;i<sync.getContenus().length;i++){
+            let contenu=sync.getContenus()[i];
+            ui.screens.films.addFilm(
+                contenu.uid,
+                contenu.name,
+                contenu.localThumbNoResizeAbsolute
+            );
+        }
+        //Affiche le logo
+        if(sync.data.json.logomachine.localFile){
+            ui.layout.setLogo(machine.appStoragePath+"/"+ sync.data.json.logomachine.localFile);
+        }
+
+        //va sur la home si on a pas démaré l'application
+        if(!started){
+            started=true;
+            setTimeout(function(){
+                ui.showScreen("home");
+            },5*1000);
+        }
+    });
+    sync.on(EVENT_ERROR,function(err){
+        document.title=err;
+        ui.log(`erreur de synchronisation ${err}`);
+        ui.displaySplashScreen(err);
+    });
+    sync.on(EVENT_UPDATED,function(){
+        ui.log("Mise à jour réussie");
+        document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
+    });
+    sync.on(EVENT_UPDATING,function(){
+        document.title="Mise à jour en cours...";
+    });
+    sync.on(EVENT_CONTENU_DELETED,function(contenu){
+        ui.screens.films.removeFilm(contenu.uid);
+    });
+    sync.on(EVENT_DOWNLOADING,function(message){
+        document.title="Téléchargement en cours...";
+        ui.log("downloading...");
+        ui.log(message);
+    });
+
+    sync.on(EVENT_NEW_APK_AVAILABLE,function(apkLocalPath){
+       ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
+       alert("TODO installer le nouvel APK sur les casques");
+    });
+
+
+    sync.on(EVENT_OFFLINE,function(){
+        ui.log("on est offline :(");
+        //todo ui.isOffline();
+    });
+    sync.on(EVENT_ONLINE,function(){
+        ui.log("on est online :)");
+        //todo ui.isOnline();
+    });
+    sync.on(EVENT_SYNCING,function(){
+        ui.log("synchronisation des contenus web en cours...");
+        //ui.$navSync.addClass("syncing");
+    });
 
 
 });
-
-
-
-
-
 
 ui.on("READY",function(){
 
@@ -80,10 +149,6 @@ ui.on("READY",function(){
         alert(CMD.RESET_ALL);
     });
 
-
-
-
-
     //TODO WAKE_UP_CASQUES
     ui.on(CMD.WAKE_UP_CASQUES,function(){
         alert(CMD.WAKE_UP_CASQUES);
@@ -98,6 +163,18 @@ ui.on("READY",function(){
     ui.on(CMD.NEW_SEANCE,function(sceance){
         alert(CMD.NEW_SEANCE);
     });
+
+
+
+    //--------TODO----------fake casques-----------------
+
+    ui.casques.addCasque(1);
+    ui.casques.addCasque(2);
+    ui.casques.addCasque(3);
+    ui.casques.addCasque(4);
+    ui.casques.addCasque(5);
+
+
     /*
     //TODO WAKE_UP_CASQUES
     ui.on(CMD.WAKE_UP_CASQUES,function(){
