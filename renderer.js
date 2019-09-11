@@ -93,6 +93,9 @@ machine.on(EVENT_READY,function(){
     });
     sync.on(EVENT_CONTENU_DELETED,function(contenu){
         ui.screens.films.removeFilm(contenu.uid);
+        console.warn("il faut effacer le contenu ",contenu);
+        //TODO effacer les fichiers windows
+        //TODO effacer les fichiers sur les casques
     });
     sync.on(EVENT_DOWNLOADING,function(message){
         document.title="Téléchargement en cours...";
