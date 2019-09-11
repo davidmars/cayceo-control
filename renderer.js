@@ -3,7 +3,9 @@
 // All of the Node.js APIs are available in this process.
 const electron = require('electron');
 const remote = electron.remote;
+const app=remote.app;
 const win = remote.getCurrentWindow();
+const rimraf = require('rimraf');
 
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
@@ -52,7 +54,7 @@ machine.on(EVENT_READY,function(){
     //------------- synchro WEB------------------------
 
     var Sync=require("./utils/Sync");
-    let sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
+    let sync=window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
 
 
     let started=false;
@@ -141,15 +143,16 @@ ui.on("READY",function(){
     ui.on(CMD.QUIT,function(){
         win.close();
     });
-
-    //TODO UPDATE_CONTENT
-    ui.on(CMD.UPDATE_CONTENT,function(){
-        alert(CMD.UPDATE_CONTENT);
-    });
-
-    //TODO RESET_ALL
+    //Efface tout les fichiers locaux et redémare l'application
     ui.on(CMD.RESET_ALL,function(){
-        alert(CMD.RESET_ALL);
+        rimraf(machine.appStoragePath,function(){
+            app.relaunch();
+            app.exit(0);
+        });
+    });
+    //Met à jour les contenus web
+    ui.on(CMD.UPDATE_CONTENT,function(){
+        window.sync.doIt();
     });
 
     //TODO WAKE_UP_CASQUES

@@ -2,6 +2,7 @@ const FileSystemUtils=require("./FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
 
+
 /**
  * Objet qui synchronise l'application avec le serveur web
  */
@@ -69,7 +70,7 @@ class Sync extends EventEmitter{
             let json = fs.readFileSync(me.jsonPath);
             json = JSON.parse(json);
             me.data = json;
-            me.applyLocalPaths();
+            me._applyLocalPaths();
             me.synchroId = me.data.json.synchroId;
             ui.log("la version du contenu est " + this.synchroId);
             ui.popIns.webApiData.displayData(json);
@@ -87,7 +88,7 @@ class Sync extends EventEmitter{
      * Applique les chemins locaux absoluts aux urls
      * @private
      */
-    applyLocalPaths(){
+    _applyLocalPaths(){
         let me=this;
         //logo
         me.data.json.logomachine.localPathAboslute=this.localStoragePath+"/"+ me.data.json.logomachine.localFile;
@@ -169,7 +170,7 @@ class Sync extends EventEmitter{
         fs.writeFileSync(this.jsonPath,JSON.stringify(json),{ encoding : 'utf8'});
         this.synchroId=json.json.synchroId;
         this.data=json;
-        this.applyLocalPaths();
+        this._applyLocalPaths();
         console.log("nouvelle version",this.synchroId);
         console.log("nouveau json",this.data);
         ui.popIns.webApiData.displayData(json);
@@ -177,7 +178,7 @@ class Sync extends EventEmitter{
 
 
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
-        if(oldJson.json.contenus){
+        if(oldJson && oldJson.json.contenus){
             let newUids=[];
             let oldUids=[];
             let i;

@@ -1,6 +1,5 @@
 const os = require('os');
 const fs = require('fs');
-const rimraf = require('rimraf');
 const FileSystemUtils = require('./FileSystemUtils');
 const EventEmitter = require("event-emitter-es6");
 /**
@@ -45,15 +44,6 @@ class Machine extends EventEmitter{
          * @type {string}
          */
         this.jsonCasquesConfigPath=this.appStoragePath+"/casques-config.json"
-    }
-
-    /**
-     * Efface tous les fichiers de config!
-     */
-    reInstall() {
-        rimraf(this.appStoragePath,function(){
-            window.ui.exitApp();
-        });
     }
 }
 module.exports = Machine;
