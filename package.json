@@ -1,0 +1,61 @@
+{
+  "name": "cayceo-control",
+  "version": "0.0.1",
+  "description": "L'interface de contrôle Cayceo",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "update": "npm update",
+    "build": "electron-builder",
+    "publish": "electron-builder -p always"
+  },
+  "repository": "https://github.com/davidmars/cayceo-control",
+  "keywords": [
+    "jukeboxvr",
+    "cayceo",
+    "virtual reality",
+    "vr"
+  ],
+  "author": "davidmars",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "electron": "^6.0.8",
+    "electron-builder": "^21.2.0"
+  },
+  "dependencies": {
+    "adbkit": "^2.11.1",
+    "cayceo-ui": "^1.0.9",
+    "electron-updater": "^4.1.2",
+    "event-emitter-es6": "^1.1.5",
+    "rimraf": "^3.0.0",
+    "socket.io": "^2.2.0"
+  },
+  "build": {
+    "appId": "com.github.davidmars.cayceo-control",
+    "win": {
+      "publish": [
+        "github"
+      ],
+      "asar": true,
+      "extraFiles": [
+        "jukebox/**/*.html",
+        "jukebox/**/*.svg",
+        "jukebox/**/*.png",
+        "jukebox/**/*.jpg"
+      ],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true
+    }
+  }
+}
