@@ -53,7 +53,7 @@ machine.on(EVENT_READY,function(){
 
     //------------- synchro WEB------------------------
 
-    var Sync=require("./utils/Sync");
+    const Sync=require("./utils/Sync");
     let sync=window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
 
 
@@ -62,11 +62,11 @@ machine.on(EVENT_READY,function(){
     sync.on(EVENT_READY,function(err){
         for(let i=0;i<sync.getContenus().length;i++){
             let contenu=sync.getContenus()[i];
-            ui.screens.films.addFilm(
+            ui.films.addFilm(
                 contenu.uid,
                 contenu.name,
                 contenu.localThumbNoResizeAbsolute
-            );
+            ).setDetails(contenu)
         }
         //Affiche le logo
         if(sync.data.json.logomachine.localFile){
@@ -77,7 +77,7 @@ machine.on(EVENT_READY,function(){
         if(!started){
             started=true;
             setTimeout(function(){
-                ui.showScreen("home");
+                ui.screens.home.show();
             },5*1000);
         }
     });
@@ -174,11 +174,11 @@ ui.on("READY",function(){
 
     //--------TODO----------fake casques-----------------
 
-    ui.casques.addCasque(1);
-    ui.casques.addCasque(2);
-    ui.casques.addCasque(3);
-    ui.casques.addCasque(4);
-    ui.casques.addCasque(5);
+    ui.casques.addCasque("1").setOnline(1);
+    ui.casques.addCasque("2").setOnline(1);
+    ui.casques.addCasque("3").setOnline(1);
+    ui.casques.addCasque("4").setOnline(1);
+    ui.casques.addCasque("5").setOnline(1);
 
 
     /*

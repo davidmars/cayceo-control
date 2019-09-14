@@ -19,12 +19,12 @@
   "author": "davidmars",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^6.0.8",
+    "electron": "^6.0.9",
     "electron-builder": "^21.2.0"
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.0.14",
+    "cayceo-ui": "^1.0.17",
     "electron-updater": "^4.1.2",
     "event-emitter-es6": "^1.1.5",
     "rimraf": "^3.0.0",
