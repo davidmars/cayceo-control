@@ -265,11 +265,23 @@ class Sync extends EventEmitter{
             let distApk=apk.serverFile;
             FileSystemUtils.ensureDirectoryExistence(apk.localPathAboslute);
             if(!fs.existsSync(apk.localPathAboslute)){
+                let log=ui.log(`Téléchargement APK ${distApk} `);
                 this.emit(EVENT_DOWNLOADING,"apk " + distApk);
-                FileSystemUtils.download(distApk,apk.localPathAboslute,function(){
-                    me.emit(EVENT_NEW_APK_AVAILABLE,apk.localPathAboslute);
-                    me.dwdNext();
-                });
+                FileSystemUtils.download(
+                    distApk
+                    ,apk.localPathAboslute
+                    ,function(file){
+                        me.emit(EVENT_NEW_APK_AVAILABLE,apk.localPathAboslute);
+                        log.setContent(`Téléchargement vers ${file} terminé :)`);
+                        me.dwdNext();
+                    }
+                    ,function(percent,bytes,total){
+                        log.setContent(`downloading new APK ${percent}%`)
+                    }
+                    ,function (err) {
+                        log.setContent(["error while downloading new APK",err])
+                    }
+                );
                 return;
             }
         }
@@ -280,9 +292,27 @@ class Sync extends EventEmitter{
         FileSystemUtils.ensureDirectoryExistence(me.data.json.logomachine.localPathAboslute);
         if(!fs.existsSync(me.data.json.logomachine.localPathAboslute)){
             this.emit(EVENT_DOWNLOADING,"logo " + dist);
-            FileSystemUtils.download(dist,me.data.json.logomachine.localPathAboslute,function(){
-                me.dwdNext();
-            });
+            let log=ui.log(`Téléchargement de ${dist} `);
+            this.emit(EVENT_DOWNLOADING,`thumb ${dist}`);
+            FileSystemUtils.download(
+                dist
+                ,me.data.json.logomachine.localPathAboslute
+                ,function(file){
+                    log.setContent(`Téléchargement vers ${file} terminé :)`)
+                    me.dwdNext();
+                }
+                ,function(percent,bytes,total){
+                    log.setContent(`Téléchargement de ${dist}  ${percent}%`)
+                }
+                ,function (err) {
+                    log.setContent([
+                        "Erreur de téléchargement"
+                        ,dist
+                        ,me.data.json.logomachine.localPathAboslute
+                        ,err
+                    ])
+                }
+            );
             return;
         }
 
@@ -297,20 +327,54 @@ class Sync extends EventEmitter{
             //contenu.localThumbAbsolute=this.localStoragePath+"/"+contenu.localThumb;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbAbsolute);
             if(!fs.existsSync(contenu.localThumbAbsolute)){
-                this.emit(EVENT_DOWNLOADING,"thumb " + contenu.serverThumb);
-                FileSystemUtils.download(contenu.serverThumb,contenu.localThumbAbsolute,function(){
-                    me.dwdNext();
-                });
+                let log=ui.log(`Téléchargement de ${contenu.serverThumb} `);
+                this.emit(EVENT_DOWNLOADING,`thumb ${contenu.serverThumb}`);
+                FileSystemUtils.download(
+                    contenu.serverThumb
+                    ,contenu.localThumbAbsolute
+                    ,function(file){
+                        log.setContent(`Téléchargement vers ${file} terminé :)`)
+                        me.dwdNext();
+                    }
+                    ,function(percent,bytes,total){
+                        log.setContent(`Téléchargement de ${contenu.serverThumb}  ${percent}%`)
+                    }
+                    ,function (err) {
+                        log.setContent([
+                            "Erreur de téléchargement"
+                            ,contenu.serverThumb
+                            ,contenu.localThumbAbsolute
+                            ,err
+                        ])
+                    }
+                );
                 return;
             }
             //dwd thumb no resize
             //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
             if(!fs.existsSync(contenu.localThumbNoResizeAbsolute)){
-                this.emit(EVENT_DOWNLOADING,"thumb no resize " + contenu.serverThumbNoResize);
-                FileSystemUtils.download(contenu.serverThumbNoResize,contenu.localThumbNoResizeAbsolute,function(){
-                    me.dwdNext();
-                });
+                let log=ui.log(`Téléchargement de ${contenu.serverThumbNoResize} `);
+                this.emit(EVENT_DOWNLOADING,`thumb no resize ${contenu.serverThumbNoResize}`);
+                FileSystemUtils.download(
+                    contenu.serverThumbNoResize
+                    ,contenu.localThumbNoResizeAbsolute
+                    ,function(file){
+                        log.setContent(`Téléchargement vers ${file} terminé :)`)
+                        me.dwdNext();
+                    }
+                    ,function(percent,bytes,total){
+                        log.setContent(`Téléchargement de ${contenu.serverThumbNoResize}  ${percent}%`)
+                    }
+                    ,function (err) {
+                        log.setContent([
+                            "Erreur de téléchargement"
+                            ,contenu.serverThumbNoResize
+                            ,contenu.localThumbNoResizeAbsolute
+                            ,err
+                        ])
+                    }
+                );
                 return;
             }
 
@@ -318,10 +382,27 @@ class Sync extends EventEmitter{
             //contenu.localFileAbsolute=this.localStoragePath+"/"+contenu.localFile;
             FileSystemUtils.ensureDirectoryExistence(contenu.localFileAbsolute);
             if(!fs.existsSync(contenu.localFileAbsolute)){
+                let log=ui.log(`Téléchargement de ${contenu.serverFile} `);
                 this.emit(EVENT_DOWNLOADING,"file " + contenu.serverFile);
-                FileSystemUtils.download(contenu.serverFile,contenu.localFileAbsolute,function(){
-                    me.dwdNext();
-                });
+                FileSystemUtils.download(
+                    contenu.serverFile
+                    ,contenu.localFileAbsolute
+                    ,function(file){
+                        log.setContent(`Téléchargement vers ${file} terminé :)`)
+                        me.dwdNext();
+                    }
+                    ,function(percent,bytes,total){
+                        log.setContent(`Téléchargement de ${contenu.serverFile}  ${percent}%`)
+                    }
+                    ,function (err) {
+                        log.setContent([
+                            "Erreur de téléchargement"
+                            ,contenu.serverFile
+                            ,contenu.localFileAbsolute
+                            ,err
+                        ])
+                    }
+                );
                 return;
             }
         }

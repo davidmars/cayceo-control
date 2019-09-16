@@ -20,27 +20,63 @@ class FileSystemUtils {
         FileSystemUtils.ensureDirectoryExistence(dirname);
         fs.mkdirSync(dirname);
     }
-
     /**
      * Télécharge un fichier en local
-     * @param {string} url Url où télécharger le fichier
+     * @param {string} sourceUrl Url où télécharger le fichier
      * @param {string} dest url local où télécharger le fichier
-     * @param {function} cb Une fois que c'est fini
+     * @param {function} cbSuccess Une fois que c'est fini renvoie l'url du fichier local
+     * @param {function} cbProgress renvoie pourcentage, bytes, bytes total
+     * @param {function} cbError renvoie l'erreur
      */
-    static download(url, dest, cb) {
-
-        var client = http;
-        if (url.toString().indexOf("https") === 0){
+    static download(sourceUrl, dest, cbSuccess=function(){},cbProgress=function(){},cbError=function(){}) {
+        let http = require('http');
+        let https = require('https');
+        let timeout = 10000;
+        let destTmp=dest+".tmp.dwd";
+        let file = fs.createWriteStream(destTmp);
+        let timeout_wrapper = function( req ) {
+            return function() {
+                //console.log('abort');
+                req.abort();
+                cbError("File transfer timeout!");
+            };
+        };
+        let client=http;
+        if (sourceUrl.toString().indexOf("https") === 0){
             client = https;
         }
-        let file = fs.createWriteStream(dest);
-        let request = client.get(url, function(response) {
-            response.pipe(file);
-            file.on('finish', function() {
-                file.close(cb);  // close() is async, call cb after close completes.
+        var request = client.get(sourceUrl).on('response', function(res) {
+            let len = parseInt(res.headers['content-length'], 10);
+            let downloaded = 0;
+
+            res.on('data', function(chunk) {
+                file.write(chunk);
+                downloaded += chunk.length;
+                let percent=(100.0 * downloaded / len).toFixed(2);
+                cbProgress(percent,downloaded,len);
+                // reset timeout
+                clearTimeout( timeoutId );
+                timeoutId = setTimeout( fn, timeout );
+            }).on('end', function () {
+                // clear timeout
+                clearTimeout( timeoutId );
+                file.end();
+                fs.renameSync(destTmp,dest);
+                cbSuccess(dest);
+            }).on('error', function (err) {
+                // clear timeout
+                clearTimeout( timeoutId );
+                cbError(err.message);
             });
         });
+
+        // generate timeout handler
+        var fn = timeout_wrapper( request );
+        // set initial timeout
+        var timeoutId = setTimeout( fn, timeout );
     }
+
+
 
     /**
      * Retourne l'url base 64 d'une image

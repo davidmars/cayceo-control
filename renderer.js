@@ -1,6 +1,9 @@
 // This file is required by the index.html file and will
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
+
+const FileSystemUtils = require('./utils/FileSystemUtils');
+
 const electron = require('electron');
 const remote = electron.remote;
 const app=remote.app;
@@ -9,9 +12,6 @@ const rimraf = require('rimraf');
 
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
-
-
-
 
 //conf
 const Conf=require("./utils/Conf");
