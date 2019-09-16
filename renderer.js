@@ -26,8 +26,6 @@ let machine=window.machine=new Machine();
 
 machine.on(EVENT_READY,function(){
 
-
-
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
@@ -35,17 +33,17 @@ machine.on(EVENT_READY,function(){
     ui.displaySplashScreen("Bonjour...");
 
     //app infos
-    ui.log(`App v: ${electron.remote.app.getVersion()}`);
-    ui.log(`Node v: ${process.versions.node}`);
-    ui.log(`Chromium v: ${process.versions.chrome}`);
-    ui.log(`Electron v: ${process.versions.electron}`);
-    ui.log(`Caiceo-ui v: ${ui.version}`);
-    ui.log(`Server: ${conf.serverRoot}`);
+    ui.log(`App v: ${electron.remote.app.getVersion()}`,true);
+    ui.log(`Node v: ${process.versions.node}`,true);
+    ui.log(`Chromium v: ${process.versions.chrome}`,true);
+    ui.log(`Electron v: ${process.versions.electron}`,true);
+    ui.log(`Caiceo-ui v: ${ui.version}`,true);
+    ui.log(`Server: ${conf.serverRoot}`,true);
 
     //------------ Machine name & MAC-----------------
 
-    ui.log("MACHINE NAME: "+machine.name);
-    ui.log("MACHINE ID: "+machine.machineId);
+    ui.log("MACHINE NAME: "+machine.name,true);
+    ui.log("MACHINE ID: "+machine.machineId,true);
 
     //------------ Répertoire de stockage-----------------
 
@@ -59,20 +57,10 @@ machine.on(EVENT_READY,function(){
 
     let started=false;
 
+    /**
+     * Quand la synchro a fait tout ce qu'elle avait à faire...
+     */
     sync.on(EVENT_READY,function(err){
-        for(let i=0;i<sync.getContenus().length;i++){
-            let contenu=sync.getContenus()[i];
-            ui.films.addFilm(
-                contenu.uid,
-                contenu.name,
-                contenu.localThumbNoResizeAbsolute
-            ).setDetails(contenu)
-        }
-        //Affiche le logo
-        if(sync.data.json.logomachine.localFile){
-            ui.layout.setLogo(machine.appStoragePath+"/"+ sync.data.json.logomachine.localFile);
-        }
-
         //va sur la home si on a pas démaré l'application
         if(!started){
             started=true;
@@ -81,31 +69,61 @@ machine.on(EVENT_READY,function(){
             },5*1000);
         }
     });
-    sync.on(EVENT_ERROR,function(err){
-        document.title=err;
-        ui.log(`erreur de synchronisation ${err}`);
-        ui.displaySplashScreen(err);
+    /**
+     * Quand le logo est pret à être affiché
+     */
+    sync.on(EVENT_WEB_SYNC_LOGO_READY,function(logoUrl){
+        //Affiche le logo
+        ui.layout.setLogo(logoUrl);
     });
-    sync.on(EVENT_UPDATED,function(){
+    /**
+     * Quand un contenu est pret à être affiché
+     */
+    sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
+        //Affiche le contenu
+        ui.films.addFilm(
+            contenu.uid,
+            contenu.name,
+            contenu.localThumbNoResizeAbsolute
+        ).setDetails(contenu)
+    });
+    /**
+     * Quand on se fait jeter par le serveur
+     */
+    sync.on(EVENT_SYNC_NOT_ALLOWED_ERROR,function(err){
+        document.title=err;
+        started=false;
+        ui.log(
+            [
+                `Erreur de synchronisation`
+                ,err
+            ],true
+        );
+        ui.displaySplashScreen();
+    });
+    sync.on(EVENT_WEB_SYNC_UPDATED,function(){
         ui.log("Mise à jour réussie");
         document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
     });
     sync.on(EVENT_UPDATING,function(){
         document.title="Mise à jour en cours...";
     });
-    sync.on(EVENT_CONTENU_DELETED,function(contenu){
+    sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
         ui.screens.films.removeFilm(contenu.uid);
-        console.warn("il faut effacer le contenu ",contenu);
-        //TODO effacer les fichiers windows
+        //efface les fichiers windows
+        FileSystemUtils.removeDirOfFile(contenu.localFileAbsolute,function(){
+            ui.log(
+                [
+                    "Contenu supprimé de la borne"
+                    ,contenu
+                ]);
+        });
+        console.warn("il faut effacer le contenu sur les casques",contenu);
+
         //TODO effacer les fichiers sur les casques
     });
-    sync.on(EVENT_DOWNLOADING,function(message){
-        document.title="Téléchargement en cours...";
-        ui.log("downloading...");
-        ui.log(message);
-    });
 
-    sync.on(EVENT_NEW_APK_AVAILABLE,function(apkLocalPath){
+    sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
        ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
        alert("TODO installer le nouvel APK sur les casques");
     });
@@ -145,10 +163,12 @@ ui.on("READY",function(){
     });
     //Efface tout les fichiers locaux et redémare l'application
     ui.on(CMD.RESET_ALL,function(){
-        rimraf(machine.appStoragePath,function(){
-            app.relaunch();
-            app.exit(0);
-        });
+        FileSystemUtils.removeDir(machine.appStoragePath,function(){
+            setTimeout(function(){
+                app.relaunch();
+                app.exit(0);
+            },1000*5);
+        })
     });
     //Met à jour les contenus web
     ui.on(CMD.UPDATE_CONTENT,function(){

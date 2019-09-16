@@ -70,7 +70,7 @@ class Sync extends EventEmitter{
             let json = fs.readFileSync(me.jsonPath);
             json = JSON.parse(json);
             me.data = json;
-            me._applyLocalPaths();
+            me._applyLocalAndCheckReady();
             me.synchroId = me.data.json.synchroId;
             ui.log("la version du contenu est " + this.synchroId);
             ui.popIns.webApiData.displayData(json);
@@ -79,30 +79,64 @@ class Sync extends EventEmitter{
             ui.popIns.webApiData.displayData("pas encore téléchargé...");
         }
         me.doIt();
+        //mise à jour programmée
         setInterval(function(){
             me.doIt();
-        },1000*window.conf.synchroDelaySeconds)
+        },1000*window.conf.synchroDelaySeconds);
+
+        //en cas d'erreur réseau
+        // dit qu'on est offline
+        // dit qu'on ne synchronise pas pour relancer une sync un peu plus tard
+        me.on(EVENT_NETWORK_ERROR,function(){
+            if(me.isOnline!==false){
+                me.isOnline=false;
+                me.emit(EVENT_OFFLINE);
+            }
+            me.syncing=false;
+            me.emit(EVENT_READY);
+        })
     }
 
     /**
      * Applique les chemins locaux absoluts aux urls
+     * Applique les variables
      * @private
      */
-    _applyLocalPaths(){
+    _applyLocalAndCheckReady(){
         let me=this;
+
         //logo
-        me.data.json.logomachine.localPathAboslute=this.localStoragePath+"/"+ me.data.json.logomachine.localFile;
+        let logo=me.data.json.logomachine;
+        logo.localPathAboslute=this.localStoragePath+"/"+ logo.localFile;
+        let logoWasReady=logo.localPathAboslute_downloaded;
+        logo.localPathAboslute_downloaded = fs.existsSync(logo.localPathAboslute);
+        if(!logoWasReady && logo.localPathAboslute_downloaded){
+            me.emit(EVENT_WEB_SYNC_LOGO_READY,logo.localPathAboslute);
+        }
+
         //apk
         if(me.data.json.casquesapk && me.data.json.casquesapk.localFile) {
             let apk = me.data.json.casquesapk;
             apk.localPathAboslute = this.localStoragePath + "/" + apk.localFile;
+            apk.localPathAboslute_downloaded = fs.existsSync(apk.localPathAboslute);
         }
         //contenus
         for(let i=0;i<this.getContenus().length;i++){
             let c=this.getContenus()[i];
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
+            c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
+
             c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
+            c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
+
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
+            c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
+
+            let contenuWasReady=c.ready;
+            c.ready=c.localFileAbsolute_downloaded && c.localThumbAbsolute_downloaded && c.localThumbNoResizeAbsolute_downloaded;
+            if(!contenuWasReady && c.ready){
+                me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
+            }
         }
     }
 
@@ -139,7 +173,7 @@ class Sync extends EventEmitter{
                 }else{
                     for(let err of json.errors){
                         me.syncing=false;
-                        me.emit(EVENT_ERROR,err);
+                        me.emit(EVENT_SYNC_NOT_ALLOWED_ERROR,err);
                     }
                 }
 
@@ -148,20 +182,13 @@ class Sync extends EventEmitter{
                 console.error("synchronisation impossible");
                 console.error("impossible de télécharger "+me.syncUrl);
                 me.emit(EVENT_NETWORK_ERROR,"impossible de télécharger "+me.syncUrl);
-                if(me.isOnline!==false){
-                    me.isOnline=false;
-                    me.emit(EVENT_OFFLINE);
-                }
-                me.syncing=false;
-                me.emit(EVENT_READY);
-
             }
         )
     }
 
     /**
      *
-     * Définit un nouveau json et donc noucelles data et nouvelle version.
+     * Définit un nouveau json et donc nouvelles data et nouvelle version.
      * @private
      * @param json
      */
@@ -170,15 +197,13 @@ class Sync extends EventEmitter{
         fs.writeFileSync(this.jsonPath,JSON.stringify(json),{ encoding : 'utf8'});
         this.synchroId=json.json.synchroId;
         this.data=json;
-        this._applyLocalPaths();
+        this._applyLocalAndCheckReady();
         console.log("nouvelle version",this.synchroId);
         console.log("nouveau json",this.data);
         ui.popIns.webApiData.displayData(json);
 
-
-
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
-        if(oldJson && oldJson.json.contenus){
+        if(oldJson && oldJson.json && oldJson.json.contenus){
             let newUids=[];
             let oldUids=[];
             let i;
@@ -193,17 +218,10 @@ class Sync extends EventEmitter{
                 if($.inArray(oldUids[i],newUids) === -1){
                     let contenu=this.getContenuByUid(oldUids[i],oldJson.json.contenus);
                     console.warn("contenu supprimé",contenu);
-                    this.emit(window.EVENT_CONTENU_DELETED,contenu);
+                    this.emit(window.EVENT_WEB_SYNC_CONTENU_DELETED,contenu);
                 }
             }
-            //recherche les contenus ajoutés
-            for(i=0;i<newUids.length;i++){
-                if($.inArray(newUids[i],oldUids) === -1){
-                    let contenu=this.getContenuByUid(newUids[i],json.json.contenus);
-                    console.warn("contenu ajouté",contenu);
-                    this.emit(window.EVENT_CONTENU_ADDED,contenu);
-                }
-            }
+
         }
 
     }
@@ -261,17 +279,15 @@ class Sync extends EventEmitter{
         //dwd apk
         if(me.data.json.casquesapk && me.data.json.casquesapk.localFile){
             let apk=me.data.json.casquesapk;
-            //apk.localPathAboslute=this.localStoragePath+"/"+ apk.localFile;
             let distApk=apk.serverFile;
             FileSystemUtils.ensureDirectoryExistence(apk.localPathAboslute);
             if(!fs.existsSync(apk.localPathAboslute)){
                 let log=ui.log(`Téléchargement APK ${distApk} `);
-                this.emit(EVENT_DOWNLOADING,"apk " + distApk);
                 FileSystemUtils.download(
                     distApk
                     ,apk.localPathAboslute
                     ,function(file){
-                        me.emit(EVENT_NEW_APK_AVAILABLE,apk.localPathAboslute);
+                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,apk.localPathAboslute);
                         log.setContent(`Téléchargement vers ${file} terminé :)`);
                         me.dwdNext();
                     }
@@ -291,13 +307,12 @@ class Sync extends EventEmitter{
         let dist=me.data.json.logomachine.serverFile;
         FileSystemUtils.ensureDirectoryExistence(me.data.json.logomachine.localPathAboslute);
         if(!fs.existsSync(me.data.json.logomachine.localPathAboslute)){
-            this.emit(EVENT_DOWNLOADING,"logo " + dist);
-            let log=ui.log(`Téléchargement de ${dist} `);
-            this.emit(EVENT_DOWNLOADING,`thumb ${dist}`);
+            let log=ui.log(`Téléchargement de ${dist} `,true);
             FileSystemUtils.download(
                 dist
                 ,me.data.json.logomachine.localPathAboslute
                 ,function(file){
+                    me._applyLocalAndCheckReady();
                     log.setContent(`Téléchargement vers ${file} terminé :)`)
                     me.dwdNext();
                 }
@@ -327,8 +342,7 @@ class Sync extends EventEmitter{
             //contenu.localThumbAbsolute=this.localStoragePath+"/"+contenu.localThumb;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbAbsolute);
             if(!fs.existsSync(contenu.localThumbAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverThumb} `);
-                this.emit(EVENT_DOWNLOADING,`thumb ${contenu.serverThumb}`);
+                let log=ui.log(`Téléchargement de ${contenu.serverThumb} `,true);
                 FileSystemUtils.download(
                     contenu.serverThumb
                     ,contenu.localThumbAbsolute
@@ -354,8 +368,7 @@ class Sync extends EventEmitter{
             //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
             if(!fs.existsSync(contenu.localThumbNoResizeAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverThumbNoResize} `);
-                this.emit(EVENT_DOWNLOADING,`thumb no resize ${contenu.serverThumbNoResize}`);
+                let log=ui.log(`Téléchargement de ${contenu.serverThumbNoResize} `,true);
                 FileSystemUtils.download(
                     contenu.serverThumbNoResize
                     ,contenu.localThumbNoResizeAbsolute
@@ -382,19 +395,25 @@ class Sync extends EventEmitter{
             //contenu.localFileAbsolute=this.localStoragePath+"/"+contenu.localFile;
             FileSystemUtils.ensureDirectoryExistence(contenu.localFileAbsolute);
             if(!fs.existsSync(contenu.localFileAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverFile} `);
-                this.emit(EVENT_DOWNLOADING,"file " + contenu.serverFile);
+                let log=ui.log(`Téléchargement de ${contenu.serverFile} `,true);
                 FileSystemUtils.download(
                     contenu.serverFile
                     ,contenu.localFileAbsolute
                     ,function(file){
                         log.setContent(`Téléchargement vers ${file} terminé :)`)
                         me.dwdNext();
+                        me._applyLocalAndCheckReady();
                     }
                     ,function(percent,bytes,total){
-                        log.setContent(`Téléchargement de ${contenu.serverFile}  ${percent}%`)
+                        log.setContent([
+                            "Téléchargement"
+                            ,contenu.serverFile
+                            ,percent+"%"
+                            ,FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)
+                        ]);
                     }
                     ,function (err) {
+                        me.emit(EVENT_NETWORK_ERROR);
                         log.setContent([
                             "Erreur de téléchargement"
                             ,contenu.serverFile
@@ -406,7 +425,7 @@ class Sync extends EventEmitter{
                 return;
             }
         }
-        me.emit(EVENT_UPDATED);
+        me.emit(EVENT_WEB_SYNC_UPDATED);
         me.emit(EVENT_READY);
         me.syncing=false;
 

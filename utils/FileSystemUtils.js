@@ -2,6 +2,7 @@ const http = require('http');
 var https = require('https');
 const path = require('path');
 const fs = require('fs');
+const rimraf = require('rimraf');
 
 /**
  * Methodes utilitaires pour le système de fichier
@@ -118,6 +119,37 @@ class FileSystemUtils {
             ++u;
         } while(Math.abs(bytes) >= thresh && u < units.length - 1);
         return bytes.toFixed(1)+' '+units[u];
+    }
+
+    /**
+     * Efface un répertoire et son contenu
+     * @param dir
+     * @param {function} cb
+     */
+    static removeDir(dir,cb){
+        if(!cb){
+            cb=function(){
+                console.log(dir+" effacé!")
+            }
+        }
+        rimraf(dir,function(){
+            cb()
+        });
+    }
+
+    /**
+     * Efface le répertoire parent du fichier donné
+     * @param file
+     * @param {function} cb
+     */
+    static removeDirOfFile(file,cb){
+        if(fs.existsSync(file)){
+            let p=path.dirname(file);
+            if(p){
+                console.log("efface le contenu de "+p)
+                FileSystemUtils.removeDir(p,cb)
+            }
+        }
     }
 }
 module.exports = FileSystemUtils;
