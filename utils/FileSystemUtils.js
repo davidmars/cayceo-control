@@ -37,6 +37,7 @@ class FileSystemUtils {
         let timeout_wrapper = function( req ) {
             return function() {
                 //console.log('abort');
+                error=true;
                 req.abort();
                 cbError("File transfer timeout!");
             };
@@ -45,6 +46,7 @@ class FileSystemUtils {
         if (sourceUrl.toString().indexOf("https") === 0){
             client = https;
         }
+        let error=false;
         var request = client.get(sourceUrl).on('response', function(res) {
             let len = parseInt(res.headers['content-length'], 10);
             let downloaded = 0;
@@ -61,10 +63,13 @@ class FileSystemUtils {
                 // clear timeout
                 clearTimeout( timeoutId );
                 file.end();
-                fs.renameSync(destTmp,dest);
-                cbSuccess(dest);
+                if(!error){
+                    fs.renameSync(destTmp,dest);
+                    cbSuccess(dest);
+                }
             }).on('error', function (err) {
                 // clear timeout
+                error=true;
                 clearTimeout( timeoutId );
                 cbError(err.message);
             });
