@@ -6,17 +6,18 @@ const FileSystemUtils = require('./utils/FileSystemUtils');
 
 const electron = require('electron');
 const remote = electron.remote;
-const app=remote.app;
-const win = remote.getCurrentWindow();
 
 const Conf=                 require("./utils/Conf");
 const Machine =             require('./utils/Machine.js');
-const Sync=                 require("./utils/Sync");
+const Sync=                 require("./models/Sync");
+const CasqueModelsManager=    require("./models/CasqueModelsManager");
+const Wifi=    require("./models/Wifi");
 
-const CasqueModelsManager=    require("./utils/casqueModelsManager");
-
+require("./utils/ip-to-numero");
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
+//passe en mode debug direct
+ui.debugMode.enable();
 
 //conf
 window.conf=new Conf();
@@ -45,7 +46,6 @@ machine.on(EVENT_READY,function(){
     //Répertoire de stockage
     ui.log(`Les fichiers de l'application sont stockés dans ${machine.appStoragePath}`);
 
-
     //------------- synchro WEB------------------------
     let sync=window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
     let started=false;
@@ -72,12 +72,31 @@ machine.on(EVENT_READY,function(){
      * Quand un contenu est pret à être affiché
      */
     sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
+
         //Affiche le contenu
         ui.films.addFilm(
             contenu.uid,
             contenu.name,
             contenu.localThumbNoResizeAbsolute
-        ).setDetails(contenu)
+        ).setDetails(contenu);
+
+        casquesManager.addContenu(contenu.localFile);
+
+    });
+    /**
+     * Quand un fichier est supprimé depuis le web
+     */
+    sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
+        ui.screens.films.removeFilm(contenu.uid);
+        //efface les fichiers windows
+        FileSystemUtils.removeDirOfFile(contenu.localFileAbsolute,function(){
+            ui.log(
+                [
+                    "Contenu supprimé de la borne"
+                    ,contenu
+                ]);
+        });
+        casquesManager.removeContenu(contenu.localFile);
     });
     /**
      * Quand on se fait jeter par le serveur
@@ -100,20 +119,7 @@ machine.on(EVENT_READY,function(){
     sync.on(EVENT_UPDATING,function(){
         document.title="Mise à jour en cours...";
     });
-    sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
-        ui.screens.films.removeFilm(contenu.uid);
-        //efface les fichiers windows
-        FileSystemUtils.removeDirOfFile(contenu.localFileAbsolute,function(){
-            ui.log(
-                [
-                    "Contenu supprimé de la borne"
-                    ,contenu
-                ]);
-        });
-        console.warn("il faut effacer le contenu sur les casques",contenu);
 
-        //TODO effacer les fichiers sur les casques
-    });
 
     sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
        ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
@@ -135,37 +141,7 @@ machine.on(EVENT_READY,function(){
 
 });
 
-
-
-
-//-----------commandes utilisateur simples------------------------
-
-//ouverture de la console
-ui.on(CMD.OPEN_CONSOLE,function(numero){
-    //window.require('remote').getCurrentWindow().toggleDevTools();
-    win.openDevTools();
-});
-//quitter le programme
-ui.on(CMD.QUIT,function(){
-    win.close();
-});
-//Efface tout les fichiers locaux et redémare l'application
-ui.on(CMD.RESET_ALL,function(){
-    FileSystemUtils.removeDir(machine.appStoragePath,function(){
-        setTimeout(function(){
-            app.relaunch();
-            app.exit(0);
-        },1000*5);
-    })
-});
-
-//-----------commandes de synchro web------------------------
-
-//Met à jour les contenus web
-ui.on(CMD.UPDATE_CONTENT,function(){
-    window.sync.doIt();
-});
-
+require("./listen-ui.js");
 
 //-----------commandes sur les casques------------------------
 
@@ -175,17 +151,14 @@ ui.on(CMD.REMOVE_CASQUE,function(numero){
     ui.showPopin(ui.popIns.dashboard);
 });
 
-//TODO WAKE_UP_CASQUES
 ui.on(CMD.WAKE_UP_CASQUES,function(){
-    alert(CMD.WAKE_UP_CASQUES);
+    casquesManager.wakeUp();
 });
 
 //TODO STOP_CASQUE
 ui.on(CMD.STOP_CASQUE,function(numero){
     alert(`${CMD.STOP_CASQUE} ${numero}`);
-
 });
-
 //TODO NEW_SEANCE
 ui.on(CMD.NEW_SEANCE,function(sceance){
     alert(CMD.NEW_SEANCE);
@@ -204,6 +177,11 @@ window.casquesManager=new CasqueModelsManager(machine);
  */
 casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
         ui.casques.addCasque(casqueModel.numero);
+        for(let i=0;i<sync.getContenus().length;i++){
+            let c=this.getContenus()[i];
+            casqueModel.addContenu(c.localFile);
+        }
+        casqueModel.syncContenus();
 });
 /**
  * On vient de supprimer un casque
@@ -215,13 +193,12 @@ casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
  * Quand une propriété d'un casque change, met à jour son ui
  */
 casquesManager.on(EVENT_CASQUE_CHANGED,function (casqueModel) {
-    /** @var {CasqueMode} casqueModel **/
-    /** @var {Casque} casqueUi **/
+    /** @property {CasqueModel} casqueModel **/
+    /** @property {Casque} casqueUi **/
     let casqueUi=ui.casques.getCasqueByNumero(casqueModel.numero);
     if(!casqueUi){
-        //casqueUi=ui.casques.addCasque(casqueModel.numero);
-    }
-    if(casqueUi){
+        console.error("casque ui introuvable",casqueModel);
+    }else{
         casqueUi.setDetails(casqueModel);
         casqueUi.setBatteryPlugged(casqueModel.plugged);
         casqueUi.setBattery(casqueModel.batteryLevel);
@@ -235,11 +212,11 @@ casquesManager.on(EVENT_CASQUE_CHANGED,function (casqueModel) {
         if(contenu !== casqueModel.contenuId){
             casqueUi.setContenu(ui.films.getFilmById(casqueModel.contenuId));
         }
-    }else{
-        console.error("casque ui introuvable",casqueModel);
     }
 });
 
+
+window.wifi=new Wifi();
 
 require("./listen-adb");
 

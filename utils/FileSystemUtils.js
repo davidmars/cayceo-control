@@ -100,6 +100,15 @@ class FileSystemUtils {
     }
 
     /**
+     * Retourn le boids en byte du ficher
+     * @param file
+     * @returns {number}
+     */
+    static fileSize(file){
+        return fs.statSync(file).size;
+    }
+
+    /**
      * Convertit des bytes en un truc lisible par les humains
      * @param bytes
      * @param si

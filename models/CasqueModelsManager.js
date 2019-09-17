@@ -76,7 +76,7 @@ class CasqueModelsManager extends EventEmitter{
     getByNumero(numero){
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
-            if(c.numero===numero){
+            if(c.numero==numero){
                 return c;
             }
         }
@@ -122,10 +122,10 @@ class CasqueModelsManager extends EventEmitter{
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
             if(c.numero===numero){
-                c.destroyed=true;
-                this._casques.splice(i, 1);
-                this.emit(EVENT_CASQUE_DELETED,c);
-                this._saveJson();
+                c.destroy();//Le casque cleanera ses listeners
+                this._casques.splice(i, 1);//efface le casque de la liste
+                this.emit(EVENT_CASQUE_DELETED,c);//dira à l'ui nottament de virer ce casque
+                this._saveJson();//enregistre la config sans ce casque
                 return c;
             }
         }
@@ -133,28 +133,55 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
-     * Définit si un casque est branché ou non
-     * @param {string} deviceId
-     * @param plugged
+     * Ajoute un contenu à tous les casques
+     * Chaque casque se chargera de gérer si il est copié ou non
+     * @param file
      */
-    setPlugged(deviceId,plugged=true){
-        let c=this.getByDeviceId(deviceId);
-        if(c){
-            c.plugged=plugged;
-            this.emit(EVENT_CASQUE_CHANGED,c);
+    addContenu(file){
+        for(let i=0; i<this._casques.length; i++){
+            let c=this._casques[i];
+            c.addContenu(file);
+            c.syncContenus();
         }
     }
     /**
-     * Définit si un casque est connecté en wifi ou non
-     * @param  {string} numero numero du casque
-     * @param online
+     * Efface un contenu à tous les casques
+     * Chaque casque se chargera de gérer si il est effectivement effacé ou non
+     * @param file
      */
-    setOnline(numero,online=true){
-        let c=this.getByNumero(numero);
-        if(c){
-            c.online=online;
-            this.emit(EVENT_CASQUE_CHANGED,c);
+    removeContenu(file){
+        for(let i=0; i<this._casques.length; i++){
+            let c=this._casques[i];
+            c.removeContenu(file);
+            c.syncContenus();
         }
     }
+
+    /**
+     * Sort de la mise en veille les casque branchés en ADB
+     */
+    wakeUp(){
+        let me=this;
+        me.wakeUpInterval=setInterval(function(){
+            for(let i=0; i<me._casques.length; i++){
+                let c=me._casques[i];
+                if(c.plugged){
+                    adb.wakeUp(c.deviceId);
+                }
+            }
+        },1000)
+    }
+
+    sleep(){
+        if(this.wakeUpInterval){
+            clearInterval(this.wakeUpInterval);
+        }
+    }
+
+
+
+
+
+
 }
 module.exports = CasqueModelsManager;

@@ -1,4 +1,4 @@
-const ADB=require("./utils/ADB");
+const ADB=require("./models/ADB");
 window.adb=new ADB();
 
 /**
@@ -45,6 +45,6 @@ adb.on(EVENT_ADB_REMOVE_DEVICE,function(deviceId){
     let casqueDevice=casquesManager.getByDeviceId(deviceId);
     if(casqueDevice){
         //le casque n'est plus branché
-        casquesManager.setPlugged(deviceId,false);
+        casqueDevice.plugged=false;
     }
 });

@@ -1,4 +1,4 @@
-const FileSystemUtils=require("./FileSystemUtils");
+const FileSystemUtils=require("../utils/FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
 
