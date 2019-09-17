@@ -63,3 +63,29 @@ window.EVENT_WEB_SYNC_NEW_APK_AVAILABLE="EVENT_WEB_SYNC_NEW_APK_AVAILABLE";
  */
 window.EVENT_WEB_SYNC_UPDATED="EVENT_WEB_SYNC_UPDATED";
 
+/**
+ * Quand un périphérique se connecte en ADB, le paramètre est le deviceId
+ * @type {string}
+ */
+window.EVENT_ADB_ADD_DEVICE="EVENT_ADB_ADD_DEVICE";
+/**
+ * Quand un périphérique se déconnecte en ADB, le paramètre est le deviceId
+ * @type {string}
+ */
+window.EVENT_ADB_REMOVE_DEVICE="EVENT_ADB_REMOVE_DEVICE";
+
+/**
+ * Quand un casque vient d'être ajouté à la liste, le paramètre est le CasqueModel
+ * @type {string}
+ */
+window.EVENT_CASQUE_ADDED="EVENT_CASQUE_ADDED";
+/**
+ * Quand un casque vient d'être supprimé de la liste, le paramètre est le CasqueModel
+ * @type {string}
+ */
+window.EVENT_CASQUE_DELETED="EVENT_CASQUE_DELETED";
+/**
+ * Quand une propriété d'un casque vient de changer
+ * @type {string}
+ */
+window.EVENT_CASQUE_CHANGED="EVENT_CASQUE_CHANGED";

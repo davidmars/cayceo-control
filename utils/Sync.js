@@ -148,6 +148,9 @@ class Sync extends EventEmitter{
         return this.data.json.contenus;
     }
 
+    /**
+     * Lance une synchronisation web de A à Z
+     */
     doIt(){
         if(this.syncing){
             return;
@@ -187,14 +190,13 @@ class Sync extends EventEmitter{
     }
 
     /**
-     *
      * Définit un nouveau json et donc nouvelles data et nouvelle version.
      * @private
      * @param json
      */
     setNewJson(json){
         let oldJson=this.data;
-        fs.writeFileSync(this.jsonPath,JSON.stringify(json),{ encoding : 'utf8'});
+        fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
         this.synchroId=json.json.synchroId;
         this.data=json;
         this._applyLocalAndCheckReady();
@@ -303,7 +305,6 @@ class Sync extends EventEmitter{
         }
 
         //dwd logo
-        //me.data.json.logomachine.localPathAboslute=this.localStoragePath+"/"+ me.data.json.logomachine.localFile;
         let dist=me.data.json.logomachine.serverFile;
         FileSystemUtils.ensureDirectoryExistence(me.data.json.logomachine.localPathAboslute);
         if(!fs.existsSync(me.data.json.logomachine.localPathAboslute)){

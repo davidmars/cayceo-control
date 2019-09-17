@@ -8,55 +8,47 @@ const electron = require('electron');
 const remote = electron.remote;
 const app=remote.app;
 const win = remote.getCurrentWindow();
-const rimraf = require('rimraf');
+
+const Conf=                 require("./utils/Conf");
+const Machine =             require('./utils/Machine.js');
+const Sync=                 require("./utils/Sync");
+
+const CasqueModelsManager=    require("./utils/casqueModelsManager");
 
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
 //conf
-const Conf=require("./utils/Conf");
 window.conf=new Conf();
 window.conf.serverRoot="https://jukeboxvr.fr"; //
 window.conf.appDirectoryStorageName="jukebox-cayceo/prod";
 
-
 //machine
-const Machine = require('./utils/Machine.js');
 let machine=window.machine=new Machine();
-
 machine.on(EVENT_READY,function(){
-
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
-
-    ui.displaySplashScreen("Bonjour...");
-
-    //app infos
+    ui.displaySplashScreen("Hello");
+    //app versions
+    //affiche la version de l'application
+    ui.layout.setVersion(remote.app.getVersion());
     ui.log(`App v: ${electron.remote.app.getVersion()}`,true);
     ui.log(`Node v: ${process.versions.node}`,true);
     ui.log(`Chromium v: ${process.versions.chrome}`,true);
     ui.log(`Electron v: ${process.versions.electron}`,true);
     ui.log(`Caiceo-ui v: ${ui.version}`,true);
     ui.log(`Server: ${conf.serverRoot}`,true);
-
-    //------------ Machine name & MAC-----------------
-
+    //machine name & MAC
     ui.log("MACHINE NAME: "+machine.name,true);
     ui.log("MACHINE ID: "+machine.machineId,true);
-
-    //------------ Répertoire de stockage-----------------
-
+    //Répertoire de stockage
     ui.log(`Les fichiers de l'application sont stockés dans ${machine.appStoragePath}`);
 
+
     //------------- synchro WEB------------------------
-
-    const Sync=require("./utils/Sync");
     let sync=window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
-
-
     let started=false;
-
     /**
      * Quand la synchro a fait tout ce qu'elle avait à faire...
      */
@@ -127,8 +119,6 @@ machine.on(EVENT_READY,function(){
        ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
        alert("TODO installer le nouvel APK sur les casques");
     });
-
-
     sync.on(EVENT_OFFLINE,function(){
         ui.log("on est offline :(");
         //todo ui.isOffline();
@@ -145,120 +135,114 @@ machine.on(EVENT_READY,function(){
 
 });
 
-ui.on("READY",function(){
-
-    //affiche la version de l'application
-    ui.layout.setVersion(remote.app.getVersion());
-
-    //-----------configure les commandes utilisateur------------------
-    
-    //ouverture de la console
-    ui.on(CMD.OPEN_CONSOLE,function(numero){
-        //window.require('remote').getCurrentWindow().toggleDevTools();
-        win.openDevTools();
-    });
-    //quitter le programme
-    ui.on(CMD.QUIT,function(){
-        win.close();
-    });
-    //Efface tout les fichiers locaux et redémare l'application
-    ui.on(CMD.RESET_ALL,function(){
-        FileSystemUtils.removeDir(machine.appStoragePath,function(){
-            setTimeout(function(){
-                app.relaunch();
-                app.exit(0);
-            },1000*5);
-        })
-    });
-    //Met à jour les contenus web
-    ui.on(CMD.UPDATE_CONTENT,function(){
-        window.sync.doIt();
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO STOP_CASQUE
-    ui.on(CMD.STOP_CASQUE,function(numero){
-        alert(`${CMD.STOP_CASQUE} ${numero}`);
-    });
-
-    //TODO NEW_SEANCE
-    ui.on(CMD.NEW_SEANCE,function(sceance){
-        alert(CMD.NEW_SEANCE);
-    });
 
 
 
-    //--------TODO----------fake casques-----------------
+//-----------commandes utilisateur simples------------------------
 
-    ui.casques.addCasque("1").setOnline(1);
-    ui.casques.addCasque("2").setOnline(1);
-    ui.casques.addCasque("3").setOnline(1);
-    ui.casques.addCasque("4").setOnline(1);
-    ui.casques.addCasque("5").setOnline(1);
+//ouverture de la console
+ui.on(CMD.OPEN_CONSOLE,function(numero){
+    //window.require('remote').getCurrentWindow().toggleDevTools();
+    win.openDevTools();
+});
+//quitter le programme
+ui.on(CMD.QUIT,function(){
+    win.close();
+});
+//Efface tout les fichiers locaux et redémare l'application
+ui.on(CMD.RESET_ALL,function(){
+    FileSystemUtils.removeDir(machine.appStoragePath,function(){
+        setTimeout(function(){
+            app.relaunch();
+            app.exit(0);
+        },1000*5);
+    })
+});
 
+//-----------commandes de synchro web------------------------
 
-    /*
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-    
-    //TODO WAKE_UP_CASQUES
-    ui.on(CMD.WAKE_UP_CASQUES,function(){
-        alert(CMD.WAKE_UP_CASQUES);
-    });
-     */
+//Met à jour les contenus web
+ui.on(CMD.UPDATE_CONTENT,function(){
+    window.sync.doIt();
+});
 
 
+//-----------commandes sur les casques------------------------
+
+ui.on(CMD.REMOVE_CASQUE,function(numero){
+    ui.log(`Désindexation du casque ${numero}`);
+    casquesManager.removeCasque(numero);
+    ui.showPopin(ui.popIns.dashboard);
+});
+
+//TODO WAKE_UP_CASQUES
+ui.on(CMD.WAKE_UP_CASQUES,function(){
+    alert(CMD.WAKE_UP_CASQUES);
+});
+
+//TODO STOP_CASQUE
+ui.on(CMD.STOP_CASQUE,function(numero){
+    alert(`${CMD.STOP_CASQUE} ${numero}`);
 
 });
+
+//TODO NEW_SEANCE
+ui.on(CMD.NEW_SEANCE,function(sceance){
+    alert(CMD.NEW_SEANCE);
+    ui.log("installer une séance",sceance);
+});
+
+
+
+//casques----------------------
+
+window.casquesManager=new CasqueModelsManager(machine);
+
+
+/**
+ * On vient d'ajouter un nouveau casque
+ */
+casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
+        ui.casques.addCasque(casqueModel.numero);
+});
+/**
+ * On vient de supprimer un casque
+ */
+casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
+    ui.casques.removeCasque(casqueModel.numero);
+});
+/**
+ * Quand une propriété d'un casque change, met à jour son ui
+ */
+casquesManager.on(EVENT_CASQUE_CHANGED,function (casqueModel) {
+    /** @var {CasqueMode} casqueModel **/
+    /** @var {Casque} casqueUi **/
+    let casqueUi=ui.casques.getCasqueByNumero(casqueModel.numero);
+    if(!casqueUi){
+        //casqueUi=ui.casques.addCasque(casqueModel.numero);
+    }
+    if(casqueUi){
+        casqueUi.setDetails(casqueModel);
+        casqueUi.setBatteryPlugged(casqueModel.plugged);
+        casqueUi.setBattery(casqueModel.batteryLevel);
+        casqueUi.setOnline(casqueModel.online);
+        casqueUi.displayTime(casqueModel.playRemainingSeconds);
+        casqueUi.setIsPlaying(casqueModel.isPlaying);
+        let contenu=casqueUi.contenu;
+        if(contenu){
+            contenu=contenu.filmId;
+        }
+        if(contenu !== casqueModel.contenuId){
+            casqueUi.setContenu(ui.films.getFilmById(casqueModel.contenuId));
+        }
+    }else{
+        console.error("casque ui introuvable",casqueModel);
+    }
+});
+
+
+require("./listen-adb");
+
+
+
 
