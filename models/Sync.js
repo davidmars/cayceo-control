@@ -200,10 +200,8 @@ class Sync extends EventEmitter{
         this.synchroId=json.json.synchroId;
         this.data=json;
         this._applyLocalAndCheckReady();
-        console.log("nouvelle version",this.synchroId);
-        console.log("nouveau json",this.data);
+        ui.log({"Nouvelle version des contenus à synchroniser":this.data});
         ui.popIns.webApiData.displayData(json);
-
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
         if(oldJson && oldJson.json && oldJson.json.contenus){
             let newUids=[];
