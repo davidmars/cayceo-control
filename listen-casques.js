@@ -70,18 +70,8 @@ ui.on(CMD.CASQUE_INSTALL_APK,function(numero){
         alert(`Il faut que le casque ${numero} soit branché`);
         return
     }
-    let apk=sync.data.json.casquesapk.localFile;
-    c.apkInstallation=`installation de ${apk}`;
-    adb.installAPKAndReboot(
-        c.deviceId,
-        apk,
-        function(){
-            c.apkInstallation=`${apk} install success! @ ${new Date().toLocaleString()}`;
-        },
-        function(err){
-            c.apkInstallation=[apk,err];
-        }
-    );
+    c.installCurrentApk();
+
 });
 //TODO CASQUE_STOP
 ui.on(CMD.CASQUE_STOP,function(numero){

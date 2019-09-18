@@ -6,6 +6,7 @@ class CasqueModel{
 
 
 
+
     constructor(){
         let me=this;
         /**
@@ -18,6 +19,11 @@ class CasqueModel{
          * @type {string}
          */
         this.numero="";
+        /**
+         * Dernier apk a avoir été installé avec succès
+         * @type {string}
+         */
+        this.lastApk="on sait pas :(";
 
         //-----------propriétés live déduites depuis ADB
 
@@ -68,6 +74,11 @@ class CasqueModel{
          * @private
          */
         this._totalPlayTime=0;
+        /**
+         * Nous informe sur le status d'installation de l'apk sur ce casque
+         * @type {string}
+         */
+        this._apkInstallation="Il ne s'est rien passé encore...";
 
         //petite boucle toutes les 10 secondes
         let interval=setInterval(function(){
@@ -86,7 +97,7 @@ class CasqueModel{
                 }
             }
 
-        },1000*10)
+        },1000*10);
 
 
 
@@ -94,9 +105,7 @@ class CasqueModel{
          * Une trace du dernier socket reçu
          * @type {{}}
          */
-        this.socket={
-
-        };
+        this.socket={};
         /**
          * Si true cela veut dire qu'on est entrain de copier des fichiers sur le casque
          * @type {boolean}
@@ -279,6 +288,38 @@ class CasqueModel{
         }
         }
         this.contenusReady=true;
+    }
+
+
+    refreshDisplay(){
+        casquesManager.emit(EVENT_CASQUE_CHANGED,this);
+    }
+
+    installCurrentApk(){
+        let me =this;
+        let apk=sync.data.json.casquesapk.localFile;
+        me.apkInstallation=`installation de ${apk}`;
+        adb.installAPKAndReboot(
+            me.deviceId,
+            apk,
+            function(){
+                me.lastApk={};
+                me.lastApk["Date d'installation"]=new Date().toLocaleString();
+                me.lastApk["file"]=sync.data.json.casquesapk.serverFile;
+                casquesManager._saveJson();
+                me.apkInstallation=`${apk} install success! ${new Date().toLocaleString()}`;
+            },
+            function(err){
+                me.apkInstallation=[apk,err];
+            }
+        );
+    }
+    get apkInstallation(){
+        return this._apkInstallation;
+    }
+    set apkInstallation(value) {
+        this._apkInstallation = value;
+        this.refreshDisplay();
     }
 
 

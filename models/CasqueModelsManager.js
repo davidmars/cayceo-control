@@ -26,11 +26,15 @@ class CasqueModelsManager extends EventEmitter{
             this._saveJson();
         }
         for(let i=0; i<this._casques.length; i++){
-            let num=this._casques[i].numero;
-            let id=this._casques[i].deviceId;
+            let num     =this._casques[i].numero;
+            let id      =this._casques[i].deviceId;
+            let lastApk =this._casques[i].lastApk;
             this._casques[i]=new CasqueModel();
             this._casques[i].numero=num;
             this._casques[i].deviceId=id;
+            if(lastApk){
+                this._casques[i].lastApk=lastApk;
+            }
             this.emit(EVENT_CASQUE_ADDED,this._casques[i]);
         }
 
@@ -46,7 +50,8 @@ class CasqueModelsManager extends EventEmitter{
             json.push(
                 {
                     "deviceId":this._casques[i].deviceId,
-                    "numero":this._casques[i].numero
+                    "numero":this._casques[i].numero,
+                    "lastApk":this._casques[i].lastApk,
                 }
             )
         }
