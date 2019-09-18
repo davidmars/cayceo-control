@@ -125,7 +125,7 @@ machine.on(EVENT_READY,function(){
 
     sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
        ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
-       alert("TODO installer le nouvel APK sur les casques");
+       casquesManager.installCurrentApk();
     });
     sync.on(EVENT_OFFLINE,function(){
         ui.log("on est offline :(");
@@ -152,9 +152,26 @@ require("./listen-ui.js");
 
 
 //TODO NEW_SEANCE
-ui.on(CMD.NEW_SEANCE,function(sceance){
+ui.on(CMD.NEW_SEANCE,function(seance){
     alert(CMD.NEW_SEANCE);
-    ui.log("installer une séance",sceance);
+    console.log("installer une séance",seance)
+    ui.log(["installer une séance",seance]);
+    /*
+    casques:[numero,numero]
+    duree: "20"
+    film: "contenumachine-196"
+    */
+
+    let contenu=sync.getContenuByUid(seance.film);
+    for(let i=0;i<seance.casques.length;i++){
+        wifi.startSeance(
+            casquesManager.getByNumero(seance.casques[i]),
+            contenu.localFile,
+            seance.duree
+        )
+    }
+
+
 });
 
 window.wifi=new Wifi();

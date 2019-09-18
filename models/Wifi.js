@@ -35,7 +35,7 @@ class Wifi extends EventEmitter{
                 console.warn("impossible de trouver de casque pour "+numero);
                 return;
             }
-            casque.sockID = socket.id;
+            casque.socketId = socket.id;
             io.to(socket.id).emit('setid', numero );
 
             setTimeout(function(){
@@ -110,6 +110,23 @@ class Wifi extends EventEmitter{
         });
 
 
+    }
+
+    /**
+     * Lance une scéance sur le casque donné
+     * @param {CasqueModel} casqueModel
+     * @param {string} contenuPath Chemin vers le fichier sur le casque
+     */
+    startSeance(casqueModel,contenuPath,minutes){
+        let obj={
+            id:casqueModel.numero,
+            videoPath:contenuPath,
+            sessionDuration: minutes*60,
+            msg : `Vazy lance le contenu! ${contenuPath} pendant ${minutes} minutes `
+        };
+        console.log("lance une seance sur ",casqueModel,obj);
+
+        io.to(casqueModel.socketId).emit('chat' , obj );
     }
 }
 module.exports = Wifi;

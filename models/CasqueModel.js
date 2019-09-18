@@ -36,7 +36,11 @@ class CasqueModel{
 
 
         //---------propriétés live déduites depuis socket wifi
-
+        /**
+         * L'identifiant de socket
+         * @type {null}
+         */
+        this.socketId=null;
         /**
          * Connecté en wifi ou pas
          * @type {boolean}
@@ -124,6 +128,38 @@ class CasqueModel{
 
     }
 
+    startSeance(){
+        wifi.io.to(this.sockID).emit('chat' , tmp );
+    }
+
+
+    /**
+     * Retourne true si l'apk est à jour
+     * @returns {string|*|boolean}
+     * @private
+     */
+    _isAPKUptodate(){
+        return (
+            this.lastApk
+            && this.lastApk.file
+            && this.lastApk.file === sync.data.json.casquesapk.serverFile
+        );
+    }
+    testAPK(){
+        let me=this;
+        if(!this._isAPKUptodate()){
+            if(this.isInstallingAPK || !this.plugged){
+                setTimeout(function(){
+                    me.testAPK();
+                },10*1000);
+            }else{
+                me.installCurrentApk();
+            }
+
+        }
+    }
+
+
     /**
      * A appeler quand on veut supprimer définitivement un casque
      * tue les listeners
@@ -142,6 +178,7 @@ class CasqueModel{
         casquesManager.emit(EVENT_CASQUE_CHANGED,this);
         if(bool){
             this.syncContenus();
+            this.testAPK();
         }
     }
 
@@ -295,10 +332,22 @@ class CasqueModel{
         casquesManager.emit(EVENT_CASQUE_CHANGED,this);
     }
 
+    /**
+     * Installe la dernière version de l'apk sur ce casque
+     */
     installCurrentApk(){
         let me =this;
         let apk=sync.data.json.casquesapk.localFile;
         me.apkInstallation=`installation de ${apk}`;
+        if(!this.plugged){
+            me.apkInstallation=[
+                "oups",
+                `${apk} `,
+                "n'a pas pu été installé car le casque était débranché"
+            ];
+            return;
+        }
+        me.isInstallingAPK=true;
         adb.installAPKAndReboot(
             me.deviceId,
             apk,
@@ -306,11 +355,17 @@ class CasqueModel{
                 me.lastApk={};
                 me.lastApk["Date d'installation"]=new Date().toLocaleString();
                 me.lastApk["file"]=sync.data.json.casquesapk.serverFile;
+                me.isInstallingAPK=false;
                 casquesManager._saveJson();
                 me.apkInstallation=`${apk} install success! ${new Date().toLocaleString()}`;
             },
             function(err){
-                me.apkInstallation=[apk,err];
+                me.isInstallingAPK=false
+                me.apkInstallation=[
+                    new Date().toLocaleString(),
+                    apk,
+                    err
+                ];
             }
         );
     }

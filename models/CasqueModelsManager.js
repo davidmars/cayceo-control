@@ -163,6 +163,16 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
+     * Installe l'apk sur tous les casques
+     */
+    installCurrentApk(){
+        for(let i=0; i<this._casques.length; i++){
+            let c=this._casques[i];
+            c.installCurrentApk();
+        }
+    }
+
+    /**
      * Sort de la mise en veille les casque branchés en ADB
      */
     wakeUp(){
