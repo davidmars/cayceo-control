@@ -134,11 +134,13 @@ class ADB extends EventEmitter{
      * @param {function} onError
      */
     pushContenu(deviceId,filePath,onComplete,onProgress,onError){
+        let me=this;
         let localFile = this.machinePath(filePath);
         let destFile = this.devicePath(filePath);
+        let destFileTmp = destFile+".tmp";
         let fileSize=FileSystemUtils.fileSize(localFile);
 
-        this.client.push(deviceId, localFile,destFile)
+        this.client.push(deviceId, localFile,destFileTmp)
             .then(function (transfer) {
                 return new Promise(function (resolve, reject) {
                     transfer.on('progress', function (stats) {
@@ -146,8 +148,13 @@ class ADB extends EventEmitter{
                         onProgress(percentage,stats.bytesTransferred,fileSize);
                     });
                     transfer.on('end', function () {
-                        onComplete();
-                        resolve();
+                        //renomme le fichier temporaire en nom de fichier normal
+                        me.shell(deviceId,`mv -f ${destFileTmp} ${destFile}`
+                            ,function(){
+                                onComplete();
+                                resolve();
+                            }
+                            );
                     });
                     transfer.on('error', function(){
                         onError();
