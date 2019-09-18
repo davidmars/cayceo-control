@@ -32,3 +32,22 @@ ui.on(CMD.RESET_ALL,function(){
 ui.on(CMD.UPDATE_CONTENT,function(){
     window.sync.doIt();
 });
+
+ui.on(CMD.NEW_SEANCE,function(seance){
+    console.log("installer une séance",seance);
+    ui.log(["installer une séance",seance]);
+    /*
+    casques:[numero,numero]
+    duree: "20"
+    film: "contenumachine-196"
+    */
+
+    let contenu=sync.getContenuByUid(seance.film);
+    for(let i=0;i<seance.casques.length;i++){
+        wifi.startSeance(
+            casquesManager.getByNumero(seance.casques[i]),
+            contenu.localFile,
+            seance.duree
+        )
+    }
+});

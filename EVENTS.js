@@ -84,8 +84,4 @@ window.EVENT_CASQUE_ADDED="EVENT_CASQUE_ADDED";
  * @type {string}
  */
 window.EVENT_CASQUE_DELETED="EVENT_CASQUE_DELETED";
-/**
- * Quand une propriété d'un casque vient de changer
- * @type {string}
- */
-window.EVENT_CASQUE_CHANGED="EVENT_CASQUE_CHANGED";
+

@@ -22,17 +22,16 @@ class Wifi extends EventEmitter{
         });
 
         io.on('connection', function(socket){
-            console.log("io connection",socket.handshake.address);
+            console.log("io connection from",socket.handshake.address);
             let numero=ipToNumero(socket.handshake.address);
-            //let identifier = socket.handshake.address.toString().substring(socket.handshake.address.toString().length-2 , socket.handshake.address.toString().length);
-            console.log("wifi device connected " + numero);
             /**
              * Le casque concerné
              * @type {CasqueModel}
              */
             let casque = casquesManager.getByNumero(numero);
             if(!casque){
-                console.warn("impossible de trouver de casque pour "+numero);
+                console.warn(`impossible de trouver un casque numéro ${numero}`);
+                console.warn(`Le casque n'a pas été branché en ADB ou a changé d'IP entre temps`);
                 return;
             }
             casque.socketId = socket.id;
@@ -68,26 +67,8 @@ class Wifi extends EventEmitter{
                         //console.log("json.totalPlaytime = " + json.totalPlaytime);
                         casque.totalPlayTime = json.totalPlaytime;
                     }
-                    /**
-                     * ANCIENNE METHODE DE GESTION DE FICHIERS appeler en plus hors adb et si casque._files null
-                     */
-                    if (
-                        !casque.plugged
-                        && casque._files
-                        && json.fileList
-                        && json.fileList.length
-                    ){
-                        casque.casqueFiles = json.fileList;
-                        for ( let i = 0 ; i<casque._files.length ;  i++)
-                        {
-                            casque.casqueFiles[i] =casque.casqueFiles[i].split("\\").join("/");
-                            console.log( 'casque file n'+i+' = ' + casque.casqueFiles[i] );
-                        }
-                        //casque._syncContenus();
-                        console.log("syncontenus????")
-
-                    }else{
-                        casque._files = null;
+                    if(json.fileList && json.fileList.length){
+                        casque.socketFiles=json.fileList;
                     }
                     if ( json.msg === "Application Pause"){
                         casque.online=false;
@@ -116,6 +97,7 @@ class Wifi extends EventEmitter{
      * Lance une scéance sur le casque donné
      * @param {CasqueModel} casqueModel
      * @param {string} contenuPath Chemin vers le fichier sur le casque
+     * @param minutes
      */
     startSeance(casqueModel,contenuPath,minutes){
         let obj={
@@ -125,8 +107,18 @@ class Wifi extends EventEmitter{
             msg : `Vazy lance le contenu! ${contenuPath} pendant ${minutes} minutes `
         };
         console.log("lance une seance sur ",casqueModel,obj);
-
         io.to(casqueModel.socketId).emit('chat' , obj );
+
+        setTimeout(function(){
+            let obj={
+                sessionDuration: minutes*60,
+                id:casqueModel.numero,
+                startsession : true
+            };
+            io.to(casqueModel.socketId).emit('chat' , obj );
+        },2000);
+
+
     }
 }
 module.exports = Wifi;

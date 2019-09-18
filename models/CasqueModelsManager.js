@@ -116,7 +116,6 @@ class CasqueModelsManager extends EventEmitter{
     /**
      * Supprime un casque de la liste des casques enregistrés
      * @param {string} numero
-     * @returns {CasqueModel} Le casque qui vient d'être supprimé
      */
     removeCasque(numero){
         let existing=this.getByNumero(numero);
@@ -131,7 +130,7 @@ class CasqueModelsManager extends EventEmitter{
                 this._casques.splice(i, 1);//efface le casque de la liste
                 this.emit(EVENT_CASQUE_DELETED,c);//dira à l'ui nottament de virer ce casque
                 this._saveJson();//enregistre la config sans ce casque
-                return c;
+                c=null;
             }
         }
 
@@ -145,7 +144,7 @@ class CasqueModelsManager extends EventEmitter{
     addContenu(file){
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
-            c.addContenu(file);
+            c.indexNewContenu(file);
             c.syncContenus();
         }
     }
