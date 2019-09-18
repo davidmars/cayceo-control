@@ -19,11 +19,27 @@ class CasqueModel{
          * @type {string}
          */
         this.numero="";
+
+
+
         /**
          * Dernier apk a avoir été installé avec succès
+         * Cette donnée est enregistrée d'une session sur l'autre
          * @type {string}
          */
         this.lastApk="on sait pas :(";
+        /**
+         * Qualque informations sur les éventuelles installations de l'APK
+         * @type {{installation: {quand: string, status: string}}}
+         */
+        this.apkInfos={
+            installation:{
+                when:'pas depuis le dernier reboot',
+                status:'',
+                installing:false
+            },
+
+        };
 
         //-----------propriétés live déduites depuis ADB
 
@@ -36,11 +52,6 @@ class CasqueModel{
 
 
         //---------propriétés live déduites depuis socket wifi
-        /**
-         * L'identifiant de socket
-         * @type {null}
-         */
-        this.socketId=null;
         /**
          * Connecté en wifi ou pas
          * @type {boolean}
@@ -78,11 +89,13 @@ class CasqueModel{
          * @private
          */
         this._totalPlayTime=0;
-        /**
-         * Nous informe sur le status d'installation de l'apk sur ce casque
-         * @type {string}
-         */
-        this._apkInstallation="Il ne s'est rien passé encore...";
+
+
+
+
+
+
+
 
         //petite boucle toutes les 10 secondes
         let interval=setInterval(function(){
@@ -105,11 +118,8 @@ class CasqueModel{
 
 
 
-        /**
-         * Une trace du dernier socket reçu
-         * @type {{}}
-         */
-        this.socket={};
+        //------------contenus-------------------------
+
         /**
          * Si true cela veut dire qu'on est entrain de copier des fichiers sur le casque
          * @type {boolean}
@@ -126,6 +136,20 @@ class CasqueModel{
          */
         this.contenus={};
 
+
+        //------------socket-------------------------
+
+        /**
+         * L'identifiant de socket
+         * @type {null}
+         */
+        this.socketId=null;
+        /**
+         * Une trace du dernier socket reçu
+         * @type {{}}
+         */
+        this.socket={};
+
     }
 
     startSeance(){
@@ -136,19 +160,20 @@ class CasqueModel{
     /**
      * Retourne true si l'apk est à jour
      * @returns {string|*|boolean}
-     * @private
      */
-    _isAPKUptodate(){
-        return (
-            this.lastApk
-            && this.lastApk.file
-            && this.lastApk.file === sync.data.json.casquesapk.serverFile
-        );
+    isApkOk(){
+        return this.lastApk===sync.data.json.casquesapk.serverFile;
     }
+
+    /**
+     * Teste si l'apk est à jour
+     * Si ce n'est pas le cas (et retente) de l'installer
+     */
     testAPK(){
         let me=this;
-        if(!this._isAPKUptodate()){
-            if(this.isInstallingAPK || !this.plugged){
+        if(!this.isApkOk()){
+            if(this.apkInfos.installation.installing || !this.plugged){
+                //essayera plus tard
                 setTimeout(function(){
                     me.testAPK();
                 },10*1000);
@@ -338,46 +363,38 @@ class CasqueModel{
     installCurrentApk(){
         let me =this;
         let apk=sync.data.json.casquesapk.localFile;
-        me.apkInstallation=`installation de ${apk}`;
+        me.apkInfos.installation.when=new Date().toLocaleString();
+        me.apkInfos.installation.status=`installation de ${apk}`;
         if(!this.plugged){
-            me.apkInstallation=[
-                "oups",
-                `${apk} `,
+            me.apkInfos.installation.status=[
+                `oups ${apk}`,
                 "n'a pas pu été installé car le casque était débranché"
             ];
+            me.refreshDisplay();
             return;
         }
-        me.isInstallingAPK=true;
+        me.apkInfos.installation.installing=true;
         adb.installAPKAndReboot(
             me.deviceId,
             apk,
             function(){
-                me.lastApk={};
-                me.lastApk["Date d'installation"]=new Date().toLocaleString();
-                me.lastApk["file"]=sync.data.json.casquesapk.serverFile;
-                me.isInstallingAPK=false;
+                //enregistre la derniere version de l'APK pour le prochain book de l'app
+                me.lastApk=sync.data.json.casquesapk.serverFile;
                 casquesManager._saveJson();
-                me.apkInstallation=`${apk} install success! ${new Date().toLocaleString()}`;
+                me.apkInfos.installation.when=new Date().toLocaleString();
+                me.apkInfos.installation.status="good !";
+                me.apkInfos.installation.installing=false;
+                me.refreshDisplay();
+
             },
             function(err){
-                me.isInstallingAPK=false
-                me.apkInstallation=[
-                    new Date().toLocaleString(),
-                    apk,
-                    err
-                ];
+                me.apkInfos.installation.when=new Date().toLocaleString();
+                me.apkInfos.installation.status=err;
+                me.apkInfos.installation.installing=false;
+                me.refreshDisplay();
             }
         );
     }
-    get apkInstallation(){
-        return this._apkInstallation;
-    }
-    set apkInstallation(value) {
-        this._apkInstallation = value;
-        this.refreshDisplay();
-    }
-
-
 
 }
 module.exports = CasqueModel;
