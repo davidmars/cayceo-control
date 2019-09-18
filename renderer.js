@@ -149,31 +149,13 @@ machine.on(EVENT_READY,function(){
 
 require("./listen-ui.js");
 
-//-----------commandes sur les casques------------------------
 
-ui.on(CMD.REMOVE_CASQUE,function(numero){
-    ui.log(`Désindexation du casque ${numero}`);
-    casquesManager.removeCasque(numero);
-    ui.showPopin(ui.popIns.dashboard);
-});
 
-ui.on(CMD.WAKE_UP_CASQUES,function(){
-    casquesManager.wakeUp();
-});
-
-//TODO STOP_CASQUE
-ui.on(CMD.STOP_CASQUE,function(numero){
-    alert(`${CMD.STOP_CASQUE} ${numero}`);
-});
 //TODO NEW_SEANCE
 ui.on(CMD.NEW_SEANCE,function(sceance){
     alert(CMD.NEW_SEANCE);
     ui.log("installer une séance",sceance);
 });
-
-
-
-
 
 window.wifi=new Wifi();
 

@@ -179,5 +179,25 @@ class ADB extends EventEmitter{
             ,function(o){}
             )
     }
+
+    /**
+     * Reboote le casque
+     * @param deviceId
+     */
+    reboot(deviceId){
+        this.client.reboot(deviceId);
+    }
+
+    installAPKAndReboot(deviceId,apk,onSuccess,onError){
+        let me=this;
+        this.client.install(deviceId,this.machinePath(apk))
+            .then(function() {
+                onSuccess();
+                me.reboot(deviceId)
+            })
+            .catch(function(err) {
+                onError(err);
+            })
+    }
 }
 module.exports = ADB;
