@@ -51,7 +51,9 @@ class Wifi extends EventEmitter{
                 console.log("msg json from ", json.id," = ",json);
                 let casque = casquesManager.getByNumero(json.id);
                 if(!casque){
+                    //dans ce cas on a casque connecté en socket mais le casque n'est pas référencé
                     console.error("imposible de trouver le casque "+json.id);
+                    //todo faire une alerte pour dire de brancher le casque numéro X ?
                 }
                 if(casque){
                     casque.socket=json;
@@ -69,6 +71,7 @@ class Wifi extends EventEmitter{
                     }
                     if(json.fileList && json.fileList.length){
                         casque.socketFiles=json.fileList;
+                        //todo victor.. la liste des fichiers on fait comment pour l'avoir?
                     }
                     if ( json.msg === "Application Pause"){
                         casque.online=false;
@@ -100,14 +103,20 @@ class Wifi extends EventEmitter{
      * @param minutes
      */
     startSeance(casqueModel,contenuPath,minutes){
+
+
+
         let obj={
             id:casqueModel.numero,
             videoPath:contenuPath,
             sessionDuration: minutes*60,
-            msg : `Vazy lance le contenu! ${contenuPath} pendant ${minutes} minutes `
+            msg : `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `
         };
         console.log("lance une seance sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
+
+        //todo victor... pouquoi faut-il faire 2 appels?
+        //todo victor... la sessionsduration semble pas marcher, j'ai toujours la même durée
 
         setTimeout(function(){
             let obj={
@@ -117,6 +126,12 @@ class Wifi extends EventEmitter{
             };
             io.to(casqueModel.socketId).emit('chat' , obj );
         },2000);
+
+        //todo victor une fois que la séance est lancée je n'ai aucun fedback...
+        //todo victor feedback contenu en cours de lecture (ou rien si il n'y a rien qui se lit)
+        //todo victor feedback isPlaying qui soit pas tout le temps sur true
+        //
+
 
 
     }
