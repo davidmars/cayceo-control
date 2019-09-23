@@ -120,7 +120,8 @@ class Wifi extends EventEmitter{
 
         setTimeout(function(){
             let obj={
-                sessionDuration: minutes*60,
+                //TODO sessionDuration: minutes*60,
+                sessionDuration: -1,
                 id:casqueModel.numero,
                 startsession : true
             };
