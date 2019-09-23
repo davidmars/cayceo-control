@@ -2,7 +2,7 @@
  * On vient d'ajouter un nouveau casque
  */
 casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
-    ui.casques.addCasque(casqueModel.numero);
+    ui.casques.addCasque(casqueModel.numero,casqueModel.ip);
     for(let i=0;i<sync.getContenus().length;i++){
         let c=sync.getContenus()[i];
         casqueModel.indexNewContenu(c.localFile);
