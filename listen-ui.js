@@ -12,10 +12,24 @@ ui.on(CMD.OPEN_CONSOLE,function(numero){
     //window.require('remote').getCurrentWindow().toggleDevTools();
     win.openDevTools();
 });
-
+//toggle full screen
+ui.on(CMD.FULLSCREEN_TOGGLE,function(){
+    if(win.isFullScreen()){
+        win.setFullScreen(false)
+    }else{
+        win.setFullScreen(true)
+    }
+});
 //quitter le programme
 ui.on(CMD.QUIT,function(){
     win.close();
+});
+//redemarrer le programme
+ui.on(CMD.REBOOT,function(){
+    setTimeout(function(){
+        app.relaunch();
+        app.exit(0);
+    },1000*1);
 });
 
 //Efface tout les fichiers locaux et redémare l'application

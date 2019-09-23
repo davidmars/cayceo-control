@@ -27,11 +27,13 @@ class CasqueModelsManager extends EventEmitter{
         }
         for(let i=0; i<this._casques.length; i++){
             let num     =this._casques[i].numero;
+            let ip     =this._casques[i].ip;
             let id      =this._casques[i].deviceId;
             let lastApk =this._casques[i].lastApk;
             this._casques[i]=new CasqueModel();
             this._casques[i].numero=num;
             this._casques[i].deviceId=id;
+            this._casques[i].ip=ip;
             if(lastApk){
                 this._casques[i].lastApk=lastApk;
             }
@@ -51,6 +53,7 @@ class CasqueModelsManager extends EventEmitter{
                 {
                     "deviceId":this._casques[i].deviceId,
                     "numero":this._casques[i].numero,
+                    "ip":this._casques[i].ip,
                     "lastApk":this._casques[i].lastApk,
                 }
             )
@@ -91,10 +94,11 @@ class CasqueModelsManager extends EventEmitter{
     /**
      * Ajoute un casque à la liste des casques enregistrés
      * @param {string} numero
+     * @param {string} ip
      * @param {string} deviceId
      * @returns {CasqueModel}
      */
-    addCasque(numero,deviceId){
+    addCasque(numero,ip,deviceId){
         let existing=this.getByDeviceId(deviceId);
         if(existing){
             console.warn(`Le casque deviceId ${deviceId} existait déjà`);
@@ -107,6 +111,7 @@ class CasqueModelsManager extends EventEmitter{
         }
         let c=new CasqueModel();
         c.numero=numero;
+        c.ip=ip;
         c.deviceId=deviceId;
         this._casques.push(c);
         this._saveJson();
@@ -179,9 +184,7 @@ class CasqueModelsManager extends EventEmitter{
         me.wakeUpInterval=setInterval(function(){
             for(let i=0; i<me._casques.length; i++){
                 let c=me._casques[i];
-                if(c.plugged){
-                    adb.wakeUp(c.deviceId);
-                }
+                c.wakeUp();
             }
         },1000)
     }

@@ -20,6 +20,11 @@ class CasqueModel{
          */
         this.numero="";
 
+        /**
+         * Adresse ip du casque
+         * @type {string}
+         */
+        this.ip="";
 
 
         /**
@@ -466,6 +471,15 @@ class CasqueModel{
                     ui.films.getFilmById(me.contenuId)
                 );
             }
+        }
+    }
+
+    /**
+     * Tente de reveiller un casque (si il est branché en adb)
+     */
+    wakeUp(){
+        if(this.plugged){
+            window.adb.wakeUp(this.deviceId);
         }
     }
 
