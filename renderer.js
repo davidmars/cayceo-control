@@ -23,7 +23,7 @@ ui.debugMode.enable();
 //conf
 window.conf=new Conf();
 window.conf.serverRoot="https://jukeboxvr.fr"; //
-window.conf.appDirectoryStorageName="jukebox-cayceo/prod";
+window.conf.appDirectoryStorageName="cayceo-control/prod";
 
 //machine
 window.machine=new Machine();
