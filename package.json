@@ -1,7 +1,7 @@
 {
   "name": "cayceo-control",
-  "version": "0.0.1",
-  "description": "L'interface de contrôle Cayceo",
+  "version": "0.0.8",
+  "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.0.28",
+    "cayceo-ui": "^1.0.30",
     "electron-updater": "^4.1.2",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",

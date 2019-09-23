@@ -19,18 +19,16 @@ casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
 
 //-----------commandes de l'utilisateur sur les casques------------------------
 
-ui.on(CMD.WAKE_UP_CASQUES,function(numero){
-    let c=casquesManager.getByNumero(numero);
-    if(numero){
-        c.wakeUp();
-    }
+ui.on(CMD.WAKE_UP_CASQUES,function(){
+    casquesManager.wakeUp();
 });
 
 //sur un seul casque...
 ui.on(CMD.CASQUE_WAKE_UP,function(numero){
-    ui.log(`Désindexation du casque ${numero}`);
-    casquesManager.removeCasque(numero);
-    ui.showPopin(ui.popIns.dashboard);
+    let c=casquesManager.getByNumero(numero);
+    if(numero){
+        c.wakeUp();
+    }
 });
 
 ui.on(CMD.CASQUE_REMOVE,function(numero){

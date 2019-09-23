@@ -81,7 +81,8 @@ class ADB extends EventEmitter{
             let m;
             if ((m = regex.exec(o)) !== null) {
                 m.forEach((match, groupIndex) => {
-                    cb(match);
+                    let ip=match.replace("inet ","")
+                    cb(ip);
                     return;
                 });
             }
