@@ -2,6 +2,7 @@ const EventEmitter = require("event-emitter-es6");
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http , { wsEngine: 'ws' , pingInterval:100});
+const ToCasque = require('./sockets/ToCasque');
 
 class Wifi extends EventEmitter{
     constructor(){
@@ -36,6 +37,8 @@ class Wifi extends EventEmitter{
             }
             casque.socketId = socket.id;
             io.to(socket.id).emit('setid', numero );
+            io.to(socket.id).emit('setip', casque.ip);
+
 
             setTimeout(function(){
                 var tmp = new ServerMessage();
@@ -48,34 +51,15 @@ class Wifi extends EventEmitter{
 
                 //io.emit('chat', msg); // exemple emit
                 var json = JSON.parse(msg);
-                console.log("msg json from ", json.id," = ",json);
-                let casque = casquesManager.getByNumero(json.id);
+                console.log("msg json from ", json.ip," = ",json);
+                let casque = casquesManager.getByIp(json.ip);
                 if(!casque){
                     //dans ce cas on a casque connecté en socket mais le casque n'est pas référencé
-                    console.error("imposible de trouver le casque "+json.id);
+                    console.error("imposible de trouver le casque "+json.ip);
                     //todo faire une alerte pour dire de brancher le casque numéro X ?
                 }
                 if(casque){
-                    casque.socket=json;
-                    casque.online=true;
-                    if(json.batterylevel){
-                        casque.batteryLevel=json.batterylevel;
-                    }
-                    if ( json.currentPlayTime > -1 ){
-                        //console.log("json.currentPlayTime = " + json.currentPlayTime);
-                        casque.currentPlayTime = json.currentPlayTime;
-                    }
-                    if ( json.totalPlaytime > 0 ){
-                        //console.log("json.totalPlaytime = " + json.totalPlaytime);
-                        casque.totalPlayTime = json.totalPlaytime;
-                    }
-                    if(json.fileList && json.fileList.length){
-                        casque.socketFiles=json.fileList;
-                        //todo victor.. la liste des fichiers on fait comment pour l'avoir?
-                    }
-                    if ( json.msg === "Application Pause"){
-                        casque.online=false;
-                    }
+                    casque.setSocket(json);
                 }
 
 
@@ -96,60 +80,85 @@ class Wifi extends EventEmitter{
 
     }
 
+
+
     /**
      * Lance une scéance sur le casque donné
      * @param {CasqueModel} casqueModel
      * @param {string} contenuPath Chemin vers le fichier sur le casque
      * @param minutes
      */
-    startSeance(casqueModel,contenuPath,minutes){
+    loadSeance(casqueModel, contenuPath, minutes){
 
 
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.contenuPath = contenuPath;
+        obj.sessionDuration = minutes*60;
+        obj.cmd = ToCasque.CMD_LOAD_SESSION;
+        obj.msg = `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `;
 
-        let obj={
-            id:casqueModel.numero,
-            videoPath:contenuPath,
-            sessionDuration: minutes*60,
-            msg : `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `
-        };
         console.log("lance une seance sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
 
-        //todo victor... pouquoi faut-il faire 2 appels?
-        //todo victor... la sessionsduration semble pas marcher, j'ai toujours la même durée
-
-        setTimeout(function(){
-            let obj={
-                //TODO sessionDuration: minutes*60,
-                sessionDuration: -1,
-                id:casqueModel.numero,
-                startsession : true
-            };
-            io.to(casqueModel.socketId).emit('chat' , obj );
-        },2000);
-
-        //todo victor une fois que la séance est lancée je n'ai aucun fedback...
-        //todo victor feedback contenu en cours de lecture (ou rien si il n'y a rien qui se lit)
-        //todo victor feedback isPlaying qui soit pas tout le temps sur true
-        //
 
 
 
     }
+
+    /**
+     * demarre la seance sur le casque
+     * @param {CasqueModel} casqueModel
+     */
+    startSeance(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_START_SESSION;
+        obj.msg = `demarre la seance sur le casque ${casqueModel.ip} connard`
+        console.log("demarre une seance sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
+
+    /**
+     * stop la seance sur le casque
+     * @param {CasqueModel} casqueModel
+     */
+    stopSeance(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_STOP_SESSION;
+        obj.msg = `stop la seance sur le casque ${casqueModel.ip} connard`
+        console.log("stop une seance sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
+
+    /**
+     * demande la mise à jour de la filelist
+     * @param {CasqueModel} casqueModel
+     */
+    askFileList(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_CHECK_FILES;
+        obj.msg = `demande la mise à jour de la filelist sur le casque ${casqueModel.ip} connard`
+        console.log("demande la mise à jour de la filelist sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
 }
 module.exports = Wifi;
 
 
 class ServerMessage{
     constructor(){
-        this.id = 0;
+        this.ip = 0;
         this.battery = false;
-        this.changelanguage = false;
         this.language = "";
-        this.startsession = false;
-        this.stopsession = false;
-        this.calibrate = false;
-        this.opencalibration = false;
         this.videoPath = "";
         this.sessionDuration = -1;
         this.msg = "default";

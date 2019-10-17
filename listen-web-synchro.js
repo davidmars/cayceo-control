@@ -27,7 +27,8 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
     ui.films.addFilm(
         contenu.uid,
         contenu.name,
-        contenu.localThumbNoResizeAbsolute
+        contenu.localThumbNoResizeAbsolute,
+        contenu.localFile
     ).setDetails(contenu);
 
     casquesManager.addContenu(contenu.localFile);
