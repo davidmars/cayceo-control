@@ -92,6 +92,21 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
+     * Retourne un CasqueModel par son Ip
+     * @param {string} ipAdress
+     * @returns {CasqueModel|null}
+     */
+    getByIp(ipAdress){
+        for(let i=0; i<this._casques.length; i++){
+            let c=this._casques[i];
+            if(c.ip==ipAdress){
+                return c;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Ajoute un casque à la liste des casques enregistrés
      * @param {string} numero
      * @param {string} ip

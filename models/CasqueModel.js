@@ -76,7 +76,7 @@ class CasqueModel{
          * Est en cours de lecture ou non
          * @type {boolean}
          */
-        this._isPlaying=false;
+        this._isPlaying=0;
         /**
          * Nombre de secondes de lecture restante
          * @type {number}

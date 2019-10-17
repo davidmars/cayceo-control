@@ -18,8 +18,6 @@ class ToCasque{
          * @type {string}
          */
         this.time=new Date().toLocaleString();
-
-
         /**
          * Une des commandes ToCasque.CMD_etc...
          * @type {null|string}
@@ -53,6 +51,4 @@ ToCasque.CMD_START_SESSION="CMD_START_SESSION";
  * @type {string}
  */
 ToCasque.CMD_STOP_SESSION="CMD_STOP_SESSION";
-
-
 

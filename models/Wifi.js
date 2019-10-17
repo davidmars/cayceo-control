@@ -36,6 +36,8 @@ class Wifi extends EventEmitter{
             }
             casque.socketId = socket.id;
             io.to(socket.id).emit('setid', numero );
+            io.to(socket.id).emit('setip', casque.ip);
+
 
             setTimeout(function(){
                 var tmp = new ServerMessage();
@@ -48,19 +50,21 @@ class Wifi extends EventEmitter{
 
                 //io.emit('chat', msg); // exemple emit
                 var json = JSON.parse(msg);
-                console.log("msg json from ", json.id," = ",json);
-                let casque = casquesManager.getByNumero(json.id);
+                console.log("msg json from ", json.ip," = ",json);
+                let casque = casquesManager.getByIp(json.ip);
                 if(!casque){
                     //dans ce cas on a casque connecté en socket mais le casque n'est pas référencé
-                    console.error("imposible de trouver le casque "+json.id);
+                    console.error("imposible de trouver le casque "+json.ip);
                     //todo faire une alerte pour dire de brancher le casque numéro X ?
                 }
                 if(casque){
                     casque.socket=json;
                     casque.online=true;
+                    casque.isPlaying = json.IsPlaying;
                     if(json.batterylevel){
                         casque.batteryLevel=json.batterylevel;
                     }
+                    /*
                     if ( json.currentPlayTime > -1 ){
                         //console.log("json.currentPlayTime = " + json.currentPlayTime);
                         casque.currentPlayTime = json.currentPlayTime;
@@ -68,7 +72,7 @@ class Wifi extends EventEmitter{
                     if ( json.totalPlaytime > 0 ){
                         //console.log("json.totalPlaytime = " + json.totalPlaytime);
                         casque.totalPlayTime = json.totalPlaytime;
-                    }
+                    }*/
                     if(json.fileList && json.fileList.length){
                         casque.socketFiles=json.fileList;
                         //todo victor.. la liste des fichiers on fait comment pour l'avoir?
@@ -108,8 +112,10 @@ class Wifi extends EventEmitter{
 
         let obj={
             id:casqueModel.numero,
-            videoPath:contenuPath,
+            contenuPath:contenuPath,
             sessionDuration: minutes*60,
+            //TODO change that for tocasque.CMD_LOAD_SESSION!
+            cmd : "CMD_LOAD_SESSION",
             msg : `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `
         };
         console.log("lance une seance sur ",casqueModel,obj);
@@ -142,14 +148,9 @@ module.exports = Wifi;
 
 class ServerMessage{
     constructor(){
-        this.id = 0;
+        this.ip = 0;
         this.battery = false;
-        this.changelanguage = false;
         this.language = "";
-        this.startsession = false;
-        this.stopsession = false;
-        this.calibrate = false;
-        this.opencalibration = false;
         this.videoPath = "";
         this.sessionDuration = -1;
         this.msg = "default";
