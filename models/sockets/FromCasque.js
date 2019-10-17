@@ -36,7 +36,7 @@ class FromCasque{
          * Si -1 c'est qu'on ne sais pat
          * @type {number}
          */
-        this.remainingSecods = -1;
+        this.remainingSeconds = -1;
         /**
          * Liste de contenus présents sur le casque
          * Si null veut dire qu'on n'en sait rien

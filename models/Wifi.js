@@ -59,28 +59,7 @@ class Wifi extends EventEmitter{
                     //todo faire une alerte pour dire de brancher le casque numéro X ?
                 }
                 if(casque){
-                    casque.socket=json;
-                    casque.online=true;
-                    casque.isPlaying = json.IsPlaying;
-                    if(json.batterylevel){
-                        casque.batteryLevel=json.batterylevel;
-                    }
-                    /*
-                    if ( json.currentPlayTime > -1 ){
-                        //console.log("json.currentPlayTime = " + json.currentPlayTime);
-                        casque.currentPlayTime = json.currentPlayTime;
-                    }
-                    if ( json.totalPlaytime > 0 ){
-                        //console.log("json.totalPlaytime = " + json.totalPlaytime);
-                        casque.totalPlayTime = json.totalPlaytime;
-                    }*/
-                    if(json.fileList && json.fileList.length){
-                        casque.socketFiles=json.fileList;
-                        //todo victor.. la liste des fichiers on fait comment pour l'avoir?
-                    }
-                    if ( json.msg === "Application Pause"){
-                        casque.online=false;
-                    }
+                    casque.setSocket(json);
                 }
 
 
@@ -101,13 +80,15 @@ class Wifi extends EventEmitter{
 
     }
 
+
+
     /**
      * Lance une scéance sur le casque donné
      * @param {CasqueModel} casqueModel
      * @param {string} contenuPath Chemin vers le fichier sur le casque
      * @param minutes
      */
-    startSeance(casqueModel,contenuPath,minutes){
+    loadSeance(casqueModel, contenuPath, minutes){
 
 
         let obj=new ToCasque();
@@ -124,6 +105,51 @@ class Wifi extends EventEmitter{
 
 
     }
+
+    /**
+     * demarre la seance sur le casque
+     * @param {CasqueModel} casqueModel
+     */
+    startSeance(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_START_SESSION;
+        obj.msg = `demarre la seance sur le casque ${casqueModel.ip} connard`
+        console.log("demarre une seance sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
+
+    /**
+     * stop la seance sur le casque
+     * @param {CasqueModel} casqueModel
+     */
+    stopSeance(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_STOP_SESSION;
+        obj.msg = `stop la seance sur le casque ${casqueModel.ip} connard`
+        console.log("stop une seance sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
+
+    /**
+     * demande la mise à jour de la filelist
+     * @param {CasqueModel} casqueModel
+     */
+    askFileList(casqueModel)
+    {
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.cmd = ToCasque.CMD_CHECK_FILES;
+        obj.msg = `demande la mise à jour de la filelist sur le casque ${casqueModel.ip} connard`
+        console.log("demande la mise à jour de la filelist sur ",casqueModel,obj);
+        io.to(casqueModel.socketId).emit('chat' , obj );
+    }
+
 }
 module.exports = Wifi;
 

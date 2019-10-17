@@ -62,7 +62,7 @@ ui.on(CMD.NEW_SEANCE,function(seance){
     let casquesNOK=[];
     let testsCount=25;
     for(let i=0;i<seance.casques.length;i++){
-        wifi.startSeance(
+        wifi.loadSeance(
             casquesManager.getByNumero(seance.casques[i]),
             contenu.localFile,
             seance.duree

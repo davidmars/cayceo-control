@@ -53,16 +53,15 @@ ui.on(CMD.CASQUE_INSTALL_APK,function(numero){
     c.installCurrentApk();
 
 });
-//TODO CASQUE_STOP
+
 ui.on(CMD.CASQUE_STOP,function(numero){
     let c= casquesManager.getByNumero(numero);
-    alert(`todo ${CMD.CASQUE_STOP} ${numero}`);
+    wifi.stopSeance(c);
 });
 
-//TODO CASQUE_PLAY
 ui.on(CMD.CASQUE_PLAY,function(numero){
     let c= casquesManager.getByNumero(numero);
-    alert(`todo ${CMD.CASQUE_PLAY} ${numero}`);
+    wifi.startSeance(c);
 });
 
 //TODO CASQUE_DELETE_ALL_FILES

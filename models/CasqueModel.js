@@ -82,24 +82,6 @@ class CasqueModel{
          * @type {number}
          */
         this._playRemainingSeconds=0;
-        /**
-         * Position actuelle (en secondes) de la lecture
-         * @type {number}
-         * @private
-         */
-        this._currentPlayTime=0;
-        /**
-         * Nombre de secondes totale pour la lecture
-         * @type {number}
-         * @private
-         */
-        this._totalPlayTime=0;
-
-
-
-
-
-
 
 
         //petite boucle toutes les 10 secondes
@@ -216,9 +198,6 @@ class CasqueModel{
     destroy(){
         this.destroyed=true;
     }
-
-
-
     get plugged(){
         return this._plugged;
     }
@@ -251,31 +230,13 @@ class CasqueModel{
     get contenuId() {
         return this._contenuId;
     }
-    set contenuId(value) {
-        this._contenuId = value;
-        this.refreshDisplay();
-    }
+
 
     get isPlaying() {
         return this._isPlaying;
     }
-    set isPlaying(value) {
-        this._isPlaying = value;
-        this.refreshDisplay();
-    }
 
-    set currentPlayTime(value) {
-        this._currentPlayTime = value;
-        this.refreshDisplay();
-    }
-    set totalPlayTime(value) {
-        this._totalPlayTime = value;
-        this.refreshDisplay();
-    }
-    get playRemainingSeconds() {
-        this._playRemainingSeconds=this._totalPlayTime-this._currentPlayTime;
-        return this._playRemainingSeconds
-    }
+
 
     /**
      * Retourne l'entrée d'un contenu par son fichier
@@ -306,6 +267,27 @@ class CasqueModel{
                 this.syncContenus();
             }
         }
+    }
+
+    /**
+     *
+     * @param {FromCasque} json
+     */
+    setSocket(json){
+        this.socket=json;
+        this._online=true;
+        this._isPlaying = json.IsPlaying;
+        if(json.batterylevel != -1){
+            this._batteryLevel=json.batterylevel;
+        }
+        this._playRemainingSeconds = json.remainingSeconds;
+        this.socketFiles=json.fileList;
+        this._contenuId= json.contenuPath;
+
+        if ( json.msg === "Application Pause"){
+            this._online=false;
+        }
+        this.refreshDisplay();
     }
 
     /**
@@ -458,8 +440,8 @@ class CasqueModel{
             casqueUi.setBatteryPlugged(me.plugged);
             casqueUi.setBattery(me.batteryLevel);
             casqueUi.setOnline(me.online);
-            casqueUi.displayTime(me.playRemainingSeconds);
-            casqueUi.setIsPlaying(me.isPlaying);
+            casqueUi.displayTime(me._playRemainingSeconds);
+            casqueUi.setIsPlaying(me.isPlaying === 1);
             casqueUi.setContenusReady(me.contenusSynchro.ready);
             casqueUi.setApkIsOk(me.isApkOk());
             let contenu=casqueUi.contenu;
@@ -468,9 +450,10 @@ class CasqueModel{
             }
             if(contenu !== me.contenuId){
                 casqueUi.setContenu(
-                    ui.films.getFilmById(me.contenuId)
+                    ui.films.getFilmByFilePath(me.contenuId)
                 );
             }
+
         }
     }
 
