@@ -52,3 +52,4 @@ ToCasque.CMD_START_SESSION="CMD_START_SESSION";
  */
 ToCasque.CMD_STOP_SESSION="CMD_STOP_SESSION";
 
+module.exports = ToCasque;

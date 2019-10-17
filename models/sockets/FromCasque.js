@@ -55,3 +55,4 @@ class FromCasque{
 FromCasque.ERROR_CONTENU_MISSING="ERROR_CONTENU_MISSING";
 
 
+module.exports = FromCasque;

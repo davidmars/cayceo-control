@@ -180,7 +180,7 @@ class CasqueModel{
         this.socketId=null;
         /**
          * Une trace du dernier socket reçu
-         * @type {{}}
+         * @type {FromCasque}
          */
         this.socket={
 

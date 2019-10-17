@@ -2,6 +2,7 @@ const EventEmitter = require("event-emitter-es6");
 const app = require('express')();
 const http = require('http').Server(app);
 const io = require('socket.io')(http , { wsEngine: 'ws' , pingInterval:100});
+const ToCasque = require('./sockets/ToCasque');
 
 class Wifi extends EventEmitter{
     constructor(){
@@ -109,35 +110,16 @@ class Wifi extends EventEmitter{
     startSeance(casqueModel,contenuPath,minutes){
 
 
+        let obj=new ToCasque();
+        obj.ip = casqueModel.ip;
+        obj.contenuPath = contenuPath;
+        obj.sessionDuration = minutes*60;
+        obj.cmd = ToCasque.CMD_LOAD_SESSION;
+        obj.msg = `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `;
 
-        let obj={
-            id:casqueModel.numero,
-            contenuPath:contenuPath,
-            sessionDuration: minutes*60,
-            //TODO change that for tocasque.CMD_LOAD_SESSION!
-            cmd : "CMD_LOAD_SESSION",
-            msg : `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `
-        };
         console.log("lance une seance sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
 
-        //todo victor... pouquoi faut-il faire 2 appels?
-        //todo victor... la sessionsduration semble pas marcher, j'ai toujours la même durée
-
-        setTimeout(function(){
-            let obj={
-                //TODO sessionDuration: minutes*60,
-                sessionDuration: -1,
-                id:casqueModel.numero,
-                startsession : true
-            };
-            io.to(casqueModel.socketId).emit('chat' , obj );
-        },2000);
-
-        //todo victor une fois que la séance est lancée je n'ai aucun fedback...
-        //todo victor feedback contenu en cours de lecture (ou rien si il n'y a rien qui se lit)
-        //todo victor feedback isPlaying qui soit pas tout le temps sur true
-        //
 
 
 

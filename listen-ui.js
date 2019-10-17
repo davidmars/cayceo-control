@@ -57,6 +57,10 @@ ui.on(CMD.NEW_SEANCE,function(seance){
     */
 
     let contenu=sync.getContenuByUid(seance.film);
+    let timeOut = null;
+    let casquesOk=[];
+    let casquesNOK=[];
+    let testsCount=25;
     for(let i=0;i<seance.casques.length;i++){
         wifi.startSeance(
             casquesManager.getByNumero(seance.casques[i]),
@@ -64,4 +68,43 @@ ui.on(CMD.NEW_SEANCE,function(seance){
             seance.duree
         )
     }
+
+    /**
+     * Renverra true si les contenus sont tous prêts sur les casques ou si le nombre d'essais est dépassé
+     * @returns {boolean}
+     */
+    let isOk=function(){
+        casquesOk=[];
+        casquesNOK=[];
+        for(let i=0;i<seance.casques.length;i++){
+            let casque = casquesManager.getByNumero(seance.casques[i]);
+            //console.log("comparaison contenu : ",casque,casque.socket,casque.socket.contenuPath ,contenu.localFile )
+            if( casque.socket.contenuPath === contenu.localFile ){
+                casquesOk.push(seance.casques[i]);
+            }else{
+                casquesNOK.push(seance.casques[i]);
+            }
+        }
+        //console.log("test installation ",casquesOk , casquesNOK);
+        testsCount--;
+        return testsCount <=0 || casquesNOK.length === 0;
+    };
+
+    /**
+     * Teste en boucle toutes les secondes si les contenus sont prêts
+     */
+    let testRecursive = function()
+    {
+        if( timeOut){clearTimeout(timeOut);}
+        timeOut = setTimeout(function (){
+            if(!isOk()){
+                testRecursive();
+            }else{
+                ui.seanceReady(casquesOk,casquesNOK)
+            }
+        },1000)
+    };
+    testRecursive();
+
+
 });
