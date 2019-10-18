@@ -56,16 +56,31 @@ function sendStatusToWindow(text) {
   mainWindow.webContents.send('message', text);
 }
 
+let updateTimeout=null;
+let updateFound=false;
+let updateLoop=function(){
+  if(updateTimeout) {
+    clearTimeout(updateTimeout);
+  }
+  if(!updateFound){
+    sendStatusToWindow('checkForUpdatesAndNotify...');
+    autoUpdater.checkForUpdatesAndNotify();
+  }else{
+    sendStatusToWindow('checkForUpdatesAndNotify en pause');
+  }
+
+  updateTimeout=setTimeout(function(){
+    updateLoop();
+  },1*60*1000);
+};
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', function(){
   createWindow();
-  sendStatusToWindow('checkForUpdatesAndNotify...');
-  autoUpdater.checkForUpdatesAndNotify();
-  setInterval(function(){
-    autoUpdater.checkForUpdatesAndNotify();
-  },60*1000);
+
+  updateLoop();
 });
 
 // Quit when all windows are closed.
@@ -91,6 +106,12 @@ autoUpdater.on('checking-for-update', () => {
 });
 autoUpdater.on('update-available', (info) => {
   sendStatusToWindow('Update available.');
+  //bloque les mises à jour
+  updateFound=true;
+  //les débloquera dans 10 minutes
+  setTimeout(function(){
+    updateFound=false;
+  },10*60*1000)
 });
 autoUpdater.on('update-not-available', (info) => {
   sendStatusToWindow('Update not available.');
