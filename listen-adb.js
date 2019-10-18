@@ -19,24 +19,12 @@ adb.on(EVENT_ADB_ADD_DEVICE,function(deviceId){
             let numero=ip[ip.length-1];
             let casqueModel=casquesManager.addCasque(numero,ipString,deviceId);
             //le nouveau casque est branché par définition
-            casqueModel.plugged=true;
+            casqueModel.setPlugged(true);
         })
-        /*
-        ui.askForCasqueNumero(
-            function(numero){
-                let casqueDevice=casquesDevices.addCasque(numero,deviceId);
-                if(casqueDevice){
-                    //le nouveau casque est branché par définition
-                    casquesDevices.setPlugged(deviceId,true);
-                }
-            }
-        );
-        */
     }else{
-        //le casque est branché
-        casqueDevice.plugged=true;
+        //le casque est branché dans tous les cas
+        casqueDevice.setPlugged(true);
     }
-
 });
 /**
  * Quand un périphérique est déconnecté....
@@ -45,6 +33,6 @@ adb.on(EVENT_ADB_REMOVE_DEVICE,function(deviceId){
     let casqueDevice=casquesManager.getByDeviceId(deviceId);
     if(casqueDevice){
         //le casque n'est plus branché
-        casqueDevice.plugged=false;
+        casqueDevice.setPlugged(false);
     }
 });

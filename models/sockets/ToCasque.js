@@ -10,7 +10,7 @@ class ToCasque{
         this.msg=null;
         /**
          * Adresse ip du casque
-         * @type {number}
+         * @type {string}
          */
         this.ip = 0;
         /**

@@ -83,27 +83,20 @@ class Wifi extends EventEmitter{
 
 
     /**
-     * Lance une scéance sur le casque donné
+     * Précharge une scéance sur le casque donné
      * @param {CasqueModel} casqueModel
      * @param {string} contenuPath Chemin vers le fichier sur le casque
      * @param minutes
      */
     loadSeance(casqueModel, contenuPath, minutes){
-
-
         let obj=new ToCasque();
         obj.ip = casqueModel.ip;
         obj.contenuPath = contenuPath;
         obj.sessionDuration = minutes*60;
         obj.cmd = ToCasque.CMD_LOAD_SESSION;
         obj.msg = `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `;
-
         console.log("lance une seance sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
-
-
-
-
     }
 
     /**

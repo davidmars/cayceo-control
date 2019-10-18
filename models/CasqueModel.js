@@ -3,10 +3,6 @@
  */
 class CasqueModel{
 
-
-
-
-
     constructor(){
         let me=this;
         /**
@@ -165,7 +161,7 @@ class CasqueModel{
          * @type {FromCasque}
          */
         this.socket={
-
+            msg:"Aucun socket reçu pour le moment"
         };
         /**
          * La liste des fichiers renvoyée par socket...mais pas toujours :\
@@ -175,11 +171,6 @@ class CasqueModel{
 
     }
 
-    startSeance(){
-        wifi.io.to(this.sockID).emit('chat' , tmp );
-    }
-
-
     /**
      * Retourne true si l'apk est à jour
      * @returns {string|*|boolean}
@@ -188,9 +179,6 @@ class CasqueModel{
         return this.lastApk===sync.data.json.casquesapk.serverFile;
     }
 
-
-
-
     /**
      * A appeler quand on veut supprimer définitivement un casque
      * tue les listeners
@@ -198,10 +186,13 @@ class CasqueModel{
     destroy(){
         this.destroyed=true;
     }
-    get plugged(){
-        return this._plugged;
-    }
-    set plugged(bool){
+
+
+    /**
+     * Définit si le casque est branché ou non
+     * @param bool
+     */
+    setPlugged(bool){
         this._plugged=bool;
         if(bool){
             this.checkContenusExists();
@@ -209,6 +200,9 @@ class CasqueModel{
             this.testAPK();
         }
         this.refreshDisplay();
+    }
+    get plugged(){
+        return this._plugged;
     }
 
     get batteryLevel(){
