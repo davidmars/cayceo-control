@@ -93,7 +93,7 @@ class CasqueModel{
                         me.batteryLevel=level;
                     });
                 }else{
-                    me.batteryLevel="?";
+                    me.setBatteryLevel("?");
                 }
             }
             me.testAPK();
@@ -208,7 +208,12 @@ class CasqueModel{
     get batteryLevel(){
         return this._batteryLevel;
     }
-    set batteryLevel(percent){
+
+    /**
+     * Définit le niveau de batterie
+     * @param percent
+     */
+    setBatteryLevel(percent){
         this._batteryLevel=percent;
         this.refreshDisplay();
     }
@@ -269,6 +274,7 @@ class CasqueModel{
      */
     setSocket(json){
         this.socket=json;
+        //on ne passe pas par les setters ici afin de ne faire qu'un seul refresh deisplay
         this._online=true;
         this._isPlaying = json.IsPlaying;
         if(json.batterylevel != -1){
