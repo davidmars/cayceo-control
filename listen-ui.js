@@ -2,6 +2,7 @@ const electron = require('electron');
 const remote = electron.remote;
 const app=remote.app;
 const win = remote.getCurrentWindow();
+const { ipcRenderer } = require('electron');
 
 /**
  * écoute des actions utilisateur
@@ -32,8 +33,7 @@ ui.on(CMD.REBOOT,function(){
 });
 ui.on(CMD.INSTALL_AND_REBOOT,function(){
     setTimeout(function(){
-        app.relaunch();
-        app.exit(0);
+        ipcRenderer.send('INSTALL_AND_REBOOT', {});
     },1000*1);
 });
 

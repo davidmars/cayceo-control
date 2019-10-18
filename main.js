@@ -51,28 +51,68 @@ function createWindow () {
 
 
 }
-
+const {ipcMain} = require('electron');
+// Fonction reçue de CMD.INSTALL_AND_REBOOT
+ipcMain.on('INSTALL_AND_REBOOT', (event, arg) => {
+  autoUpdater.quitAndInstall();
+});
+//envoie un message à renderer
 function sendStatusToWindow(text,channel="MAJ") {
   mainWindow.webContents.send(channel, text);
 }
 
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Mise à jour ???');
+});
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow('Va télécharger une mise à jour');
+  //bloque les mises à jour
+  updateFound=true;
+  //les débloquera dans 10 minutes
+  updateTimeoutUnblock=setTimeout(function(){
+    updateFound=false;
+  },updateIntervalInstallingMinutes*60*1000)
+});
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('');
+});
+autoUpdater.on('error', (err) => {
+  sendStatusToWindow('Error ' + err);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+  //let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  //log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  //log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(`Mise à jour ${Math.round(progressObj.percent)}%`);
+});
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatusToWindow('Installer la mise à jour',"MAJ done");
+  updateLoop(true)
+});
+
 //temps entre deux test de nouvelle version
-let updateIntervalMinutes=5;
+let updateIntervalMinutes=1;
 //temps donné pour une installation
 let updateIntervalInstallingMinutes=30;
 let updateTimeout=null;
+let updateTimeoutUnblock=null;
 let updateFound=false;
-let updateLoop=function(){
+let updateLoop=function(stop=false){
   if(updateTimeout) {
     clearTimeout(updateTimeout);
   }
+  if(stop){
+    if(updateTimeoutUnblock) {
+      clearTimeout(updateTimeoutUnblock);
+    }
+    return;
+  }
   if(!updateFound){
-    sendStatusToWindow('checkForUpdatesAndNotify...');
+    sendStatusToWindow('Mise à jour ?');
     autoUpdater.checkForUpdatesAndNotify();
   }else{
-    sendStatusToWindow('checkForUpdatesAndNotify en pause');
+    sendStatusToWindow('Va télécharger une mise à jour...');
   }
-
   updateTimeout=setTimeout(function(){
     updateLoop();
   },updateIntervalMinutes*60*1000);
@@ -83,8 +123,10 @@ let updateLoop=function(){
 // Some APIs can only be used after this event occurs.
 app.on('ready', function(){
   createWindow();
+  setInterval(function(){
+    updateLoop();
+  },5*1000);
 
-  updateLoop();
 });
 
 // Quit when all windows are closed.
@@ -105,31 +147,4 @@ app.on('activate', function () {
 
 
 
-autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('Recherche de mise à jour');
-});
-autoUpdater.on('update-available', (info) => {
-  sendStatusToWindow('Mise à jour disponible');
-  //bloque les mises à jour
-  updateFound=true;
-  //les débloquera dans 10 minutes
-  setTimeout(function(){
-    updateFound=false;
-  },updateIntervalInstallingMinutes*60*1000)
-});
-autoUpdater.on('update-not-available', (info) => {
-  sendStatusToWindow('');
-});
-autoUpdater.on('error', (err) => {
-  sendStatusToWindow('Error ' + err);
-});
-autoUpdater.on('download-progress', (progressObj) => {
-  let log_message = "Download speed: " + progressObj.bytesPerSecond;
-  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
-  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
-  sendStatusToWindow(`Mise à jour ${Math.round(progressObj.percent)}%`);
-});
-autoUpdater.on('update-downloaded', (info) => {
-  sendStatusToWindow('Mise à jour téléchargée',"MAJ done");
-  //autoUpdater.quitAndInstall();
-});
+

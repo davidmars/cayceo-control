@@ -27,7 +27,9 @@ window.conf.appDirectoryStorageName="cayceo-control/prod";
 // Listen for messages
 const {ipcRenderer} = require('electron');
 ipcRenderer.on('MAJ', function(event, text) {
-    ui.log(`${text}`,true);
+    if(text){
+        ui.log(`${text}`,true);
+    }
     ui.layout.setVersionUpdateMessage(text);
 });
 ipcRenderer.on('MAJ done', function(event, text) {
