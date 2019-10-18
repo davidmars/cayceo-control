@@ -62,13 +62,13 @@ class CasqueModel{
          * @private
          * @type {null|string}
          */
-        this._contenuId=null;
+        this._contenuPath=null;
         /**
          * Est en cours de lecture ou non
          * @private
          * @type {boolean}
          */
-        this._isPlaying=0;
+        this._isPlaying=false;
         /**
          * Nombre de secondes de lecture restante
          * @private
@@ -220,9 +220,9 @@ class CasqueModel{
     }
     get online() {return this._online;}
 
-    get contenuId() {return this._contenuId;}
+    get contenuPath() {return this._contenuPath;}
 
-    get isPlaying() {return this._isPlaying;}
+    get isPlaying() {return this._isPlaying}
 
 
 
@@ -265,13 +265,13 @@ class CasqueModel{
         this.socket=json;
         //on ne passe pas par les setters ici afin de ne faire qu'un seul refresh deisplay
         this._online=true;
-        this._isPlaying = json.IsPlaying;
+        this._isPlaying = json.isPlaying === 1;
         if(json.batterylevel !== -1){
             this._batteryLevel=json.batterylevel;
         }
         this._playRemainingSeconds = json.remainingSeconds;
         this.socketFiles=json.fileList;
-        this._contenuId= json.contenuPath;
+        this._contenuPath= json.contenuPath;
         if ( json.msg === "Application Pause"){
             this._online=false;
         }
@@ -429,18 +429,16 @@ class CasqueModel{
             casqueUi.setBattery(me.batteryLevel);
             casqueUi.setOnline(me.online);
             casqueUi.displayTime(me._playRemainingSeconds);
-            casqueUi.setIsPlaying(me.isPlaying === 1);
+            console.log("me.isPlaying",me.isPlaying);
+
             casqueUi.setContenusReady(me.contenusSynchro.ready);
             casqueUi.setApkIsOk(me.isApkOk());
-            let contenu=casqueUi.contenu;
-            if(contenu){
-                contenu=contenu.filmId;
+            if(me.contenuPath){
+                casqueUi.setContenuPath(me.contenuPath);
+            }else{
+                casqueUi.setContenu(null);
             }
-            if(contenu !== me.contenuId){
-                casqueUi.setContenu(
-                    ui.films.getFilmByFilePath(me.contenuId)
-                );
-            }
+            casqueUi.setIsPlaying(me.isPlaying);
 
         }
     }
