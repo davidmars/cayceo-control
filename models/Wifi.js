@@ -55,22 +55,19 @@ class Wifi extends EventEmitter{
                 let casque = casquesManager.getByIp(json.ip);
                 if(!casque){
                     //dans ce cas on a casque connecté en socket mais le casque n'est pas référencé
-                    console.error("imposible de trouver le casque "+json.ip);
+                    console.error("impossible de trouver le casque "+json.ip);
                     //todo faire une alerte pour dire de brancher le casque numéro X ?
                 }
                 if(casque){
                     casque.setSocket(json);
                 }
-
-
-
             });
 
             socket.on('disconnect', function(){
                 console.error("socket disconect");
                 let casque = casquesManager.getByNumero(numero);
                 if(casque){
-                    casque.online=false;
+                    casque.setOnline(false);
                 }
             });
 

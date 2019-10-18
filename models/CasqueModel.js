@@ -1,3 +1,4 @@
+const ContenuSurCasque=require("./ContenuSurCasque.js");
 /**
  * C'est la représentation des données propres à un casque
  */
@@ -21,8 +22,6 @@ class CasqueModel{
          * @type {string}
          */
         this.ip="";
-
-
         /**
          * Dernier apk a avoir été installé avec succès
          * Cette donnée est enregistrée d'une session sur l'autre
@@ -46,35 +45,39 @@ class CasqueModel{
 
         /**
          * Branché (en ADB) ou pas
-         * @type {boolean}
          * @private
+         * @type {boolean}
          */
         this._plugged=false;
-
 
         //---------propriétés live déduites depuis socket wifi
         /**
          * Connecté en wifi ou pas
+         * @private
          * @type {boolean}
          */
         this._online=false;
         /**
          * Le niveau de batterie
+         * @private
          * @type {number}
          */
         this._batteryLevel=0;
         /**
          * L'identifiant du contenu en cours de lecture
+         * @private
          * @type {null|string}
          */
         this._contenuId=null;
         /**
          * Est en cours de lecture ou non
+         * @private
          * @type {boolean}
          */
         this._isPlaying=0;
         /**
          * Nombre de secondes de lecture restante
+         * @private
          * @type {number}
          */
         this._playRemainingSeconds=0;
@@ -90,7 +93,7 @@ class CasqueModel{
                 if(me.plugged){
                     //niveau de batterie depuis ADB si on peut pas faire autrement
                     adb.getBattery(me.deviceId,function(level){
-                        me.batteryLevel=level;
+                        me.setBatteryLevel(level);
                     });
                 }else{
                     me.setBatteryLevel("?");
@@ -201,13 +204,7 @@ class CasqueModel{
         }
         this.refreshDisplay();
     }
-    get plugged(){
-        return this._plugged;
-    }
-
-    get batteryLevel(){
-        return this._batteryLevel;
-    }
+    get plugged(){return this._plugged;}
 
     /**
      * Définit le niveau de batterie
@@ -217,23 +214,21 @@ class CasqueModel{
         this._batteryLevel=percent;
         this.refreshDisplay();
     }
+    get batteryLevel(){return this._batteryLevel;}
 
-    get online() {
-        return this._online;
-    }
-    set online(value) {
+    /**
+     * Définit si le casque est online ou pas
+     * @param value
+     */
+    setOnline(value) {
         this._online = value;
         this.refreshDisplay();
     }
+    get online() {return this._online;}
 
-    get contenuId() {
-        return this._contenuId;
-    }
+    get contenuId() {return this._contenuId;}
 
-
-    get isPlaying() {
-        return this._isPlaying;
-    }
+    get isPlaying() {return this._isPlaying;}
 
 
 
@@ -277,13 +272,12 @@ class CasqueModel{
         //on ne passe pas par les setters ici afin de ne faire qu'un seul refresh deisplay
         this._online=true;
         this._isPlaying = json.IsPlaying;
-        if(json.batterylevel != -1){
+        if(json.batterylevel !== -1){
             this._batteryLevel=json.batterylevel;
         }
         this._playRemainingSeconds = json.remainingSeconds;
         this.socketFiles=json.fileList;
         this._contenuId= json.contenuPath;
-
         if ( json.msg === "Application Pause"){
             this._online=false;
         }
@@ -519,21 +513,7 @@ class CasqueModel{
 
 }
 
-/**
- * Représente un contenu qui devrait être sur un casque
- */
-class ContenuSurCasque{
-    constructor(file){
-        this.file=file;
-        this.status="";
-        this.isOnCasque=null;
-        this.shouldBeDeleted=null;
-        this.fileExistsby={
-            "adb":null,
-            "socket":null
-        }
-    }
-}
+
 
 
 module.exports = CasqueModel;
