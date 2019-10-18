@@ -10,6 +10,11 @@ class FromCasque{
          */
         this.msg=null;
         /**
+         * TODO VICTOR Le numéro de version d'APK installé
+         * @type {string}
+         */
+        this.apkVersion="";
+        /**
          * Adresse ip du casque
          * @type {number}
          */
