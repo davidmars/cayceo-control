@@ -13,7 +13,6 @@ const Sync=                 require("./models/Sync");
 const CasqueModelsManager=    require("./models/CasqueModelsManager");
 const Wifi=    require("./models/Wifi");
 
-require("./utils/ip-to-numero");
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 

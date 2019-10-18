@@ -8,8 +8,7 @@ const win = remote.getCurrentWindow();
  */
 
 //ouverture de la console
-ui.on(CMD.OPEN_CONSOLE,function(numero){
-    //window.require('remote').getCurrentWindow().toggleDevTools();
+ui.on(CMD.OPEN_CONSOLE,function(){
     win.openDevTools();
 });
 //toggle full screen
@@ -51,7 +50,7 @@ ui.on(CMD.NEW_SEANCE,function(seance){
     console.log("installer une séance",seance);
     ui.log(["installer une séance",seance]);
     /*
-    casques:[numero,numero]
+    casques:[ip,ip]
     duree: "20"
     film: "contenumachine-196"
     */
@@ -63,7 +62,7 @@ ui.on(CMD.NEW_SEANCE,function(seance){
     let testsCount=25;
     for(let i=0;i<seance.casques.length;i++){
         wifi.loadSeance(
-            casquesManager.getByNumero(seance.casques[i]),
+            casquesManager.getByIp(seance.casques[i]),
             contenu.localFile,
             seance.duree
         )
@@ -77,7 +76,7 @@ ui.on(CMD.NEW_SEANCE,function(seance){
         casquesOk=[];
         casquesNOK=[];
         for(let i=0;i<seance.casques.length;i++){
-            let casque = casquesManager.getByNumero(seance.casques[i]);
+            let casque = casquesManager.getByIp(seance.casques[i]);
             //console.log("comparaison contenu : ",casque,casque.socket,casque.socket.contenuPath ,contenu.localFile )
             if( casque.socket.contenuPath === contenu.localFile ){
                 casquesOk.push(seance.casques[i]);

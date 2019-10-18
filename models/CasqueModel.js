@@ -12,12 +12,6 @@ class CasqueModel{
          */
         this.deviceId="";
         /**
-         * L'identifiant de type 1,2,3,4 ou 5
-         * @type {string}
-         */
-        this.numero="";
-
-        /**
          * Adresse ip du casque
          * @type {string}
          */
@@ -426,9 +420,9 @@ class CasqueModel{
     refreshDisplay(){
         let me=this;
         /** @property {Casque} casqueUi **/
-        let casqueUi=ui.casques.getCasqueByNumero(me.numero);
+        let casqueUi=ui.casques.getCasqueByIp(me.ip);
         if(!casqueUi){
-            console.error(`casque ui introuvable ${me.numero}`,me);
+            console.error(`casque ui introuvable ${me.ip}`,me);
         }else{
             casqueUi.setDetails(me);
             casqueUi.setBatteryPlugged(me.plugged);

@@ -2,7 +2,7 @@
  * On vient d'ajouter un nouveau casque
  */
 casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
-    ui.casques.addCasque(casqueModel.numero,casqueModel.ip);
+    ui.casques.addCasque(casqueModel.ip);
     for(let i=0;i<sync.getContenus().length;i++){
         let c=sync.getContenus()[i];
         casqueModel.indexNewContenu(c.localFile);
@@ -13,7 +13,7 @@ casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
  * On vient de supprimer un casque
  */
 casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
-    ui.casques.removeCasque(casqueModel.numero);
+    ui.casques.removeCasque(casqueModel.ip);
 });
 
 
@@ -24,52 +24,52 @@ ui.on(CMD.WAKE_UP_CASQUES,function(){
 });
 
 //sur un seul casque...
-ui.on(CMD.CASQUE_WAKE_UP,function(numero){
-    let c=casquesManager.getByNumero(numero);
-    if(numero){
+ui.on(CMD.CASQUE_WAKE_UP,function(ip){
+    let c=casquesManager.getByIp(ip);
+    if(ip){
         c.wakeUp();
     }
 });
 
-ui.on(CMD.CASQUE_REMOVE,function(numero){
-    ui.log(`Désindexation du casque ${numero}`);
-    casquesManager.removeCasque(numero);
+ui.on(CMD.CASQUE_REMOVE,function(ip){
+    ui.log(`Désindexation du casque ${ip}`);
+    casquesManager.removeCasque(ip);
     ui.showPopin(ui.popIns.dashboard);
 });
-ui.on(CMD.CASQUE_REBOOT,function(numero){
-    let c= casquesManager.getByNumero(numero);
+ui.on(CMD.CASQUE_REBOOT,function(ip){
+    let c= casquesManager.getByIp(ip);
     if(!c.plugged){
-        alert(`Il faut que le casque ${numero} soit branché`);
+        alert(`Il faut que le casque ${ip} soit branché`);
         return
     }
     adb.reboot(c.deviceId);
 });
-ui.on(CMD.CASQUE_INSTALL_APK,function(numero){
-    let c= casquesManager.getByNumero(numero);
+ui.on(CMD.CASQUE_INSTALL_APK,function(ip){
+    let c= casquesManager.getByIp(ip);
     if(!c.plugged){
-        alert(`Il faut que le casque ${numero} soit branché`);
+        alert(`Il faut que le casque ${ip} soit branché`);
         return
     }
     c.installCurrentApk();
 
 });
 
-ui.on(CMD.CASQUE_STOP,function(numero){
-    let c= casquesManager.getByNumero(numero);
+ui.on(CMD.CASQUE_STOP,function(ip){
+    let c= casquesManager.getByIp(ip);
     wifi.stopSeance(c);
 });
 
-ui.on(CMD.CASQUE_PLAY,function(numero){
-    let c= casquesManager.getByNumero(numero);
+ui.on(CMD.CASQUE_PLAY,function(ip){
+    let c= casquesManager.getByIp(ip);
     wifi.startSeance(c);
 });
 
 //TODO CASQUE_DELETE_ALL_FILES
-ui.on(CMD.CASQUE_DELETE_ALL_FILES,function(numero){
-    let c= casquesManager.getByNumero(numero);
+ui.on(CMD.CASQUE_DELETE_ALL_FILES,function(ip){
+    let c= casquesManager.getByIp(ip);
     if(!c.plugged){
-        alert(`Il faut que le casque ${numero} soit branché`);
+        alert(`Il faut que le casque ${ip} soit branché`);
         return
     }
-    alert(`todo ${CMD.CASQUE_DELETE_ALL_FILES} ${numero}`);
+    alert(`todo ${CMD.CASQUE_DELETE_ALL_FILES} ${ip}`);
 });

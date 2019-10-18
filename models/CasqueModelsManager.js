@@ -26,12 +26,10 @@ class CasqueModelsManager extends EventEmitter{
             this._saveJson();
         }
         for(let i=0; i<this._casques.length; i++){
-            let num     =this._casques[i].numero;
             let ip     =this._casques[i].ip;
             let id      =this._casques[i].deviceId;
             let lastApk =this._casques[i].lastApk;
             this._casques[i]=new CasqueModel();
-            this._casques[i].numero=num;
             this._casques[i].deviceId=id;
             this._casques[i].ip=ip;
             if(lastApk){
@@ -43,7 +41,7 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
-     * Enregistre les associations deviceId / numero pour une future utilisation
+     * Enregistre les associations deviceId / ip pour une future utilisation
      * @private
      */
     _saveJson(){
@@ -52,7 +50,6 @@ class CasqueModelsManager extends EventEmitter{
             json.push(
                 {
                     "deviceId":this._casques[i].deviceId,
-                    "numero":this._casques[i].numero,
                     "ip":this._casques[i].ip,
                     "lastApk":this._casques[i].lastApk,
                 }
@@ -77,21 +74,6 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
-     * Retourne un CasqueModel par son numero
-     * @param {string} numero
-     * @returns {CasqueModel|null}
-     */
-    getByNumero(numero){
-        for(let i=0; i<this._casques.length; i++){
-            let c=this._casques[i];
-            if(c.numero==numero){
-                return c;
-            }
-        }
-        return null;
-    }
-
-    /**
      * Retourne un CasqueModel par son Ip
      * @param {string} ipAdress
      * @returns {CasqueModel|null}
@@ -108,24 +90,22 @@ class CasqueModelsManager extends EventEmitter{
 
     /**
      * Ajoute un casque à la liste des casques enregistrés
-     * @param {string} numero
      * @param {string} ip
      * @param {string} deviceId
      * @returns {CasqueModel}
      */
-    addCasque(numero,ip,deviceId){
+    addCasque(ip,deviceId){
         let existing=this.getByDeviceId(deviceId);
         if(existing){
             console.warn(`Le casque deviceId ${deviceId} existait déjà`);
             return existing;
         }
-        existing=this.getByNumero(numero);
+        existing=this.getByIp(ip);
         if(existing){
-            console.warn(`Le casque numero ${numero} existait déjà`);
+            console.warn(`Le casque ${ip} existait déjà`);
             return existing;
         }
         let c=new CasqueModel();
-        c.numero=numero;
         c.ip=ip;
         c.deviceId=deviceId;
         this._casques.push(c);
@@ -135,17 +115,17 @@ class CasqueModelsManager extends EventEmitter{
     }
     /**
      * Supprime un casque de la liste des casques enregistrés
-     * @param {string} numero
+     * @param {string} ip
      */
-    removeCasque(numero){
-        let existing=this.getByNumero(numero);
+    removeCasque(ip){
+        let existing=this.getByIp(ip);
         if(!existing){
-            console.warn(`Le casque numero ${numero} n'existe pas`);
+            console.warn(`Le casque ${ip} n'existe pas`);
             return null;
         }
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
-            if(c.numero===numero){
+            if(c.ip===ip){
                 c.destroy();//Le casque cleanera ses listeners
                 this._casques.splice(i, 1);//efface le casque de la liste
                 this.emit(EVENT_CASQUE_DELETED,c);//dira à l'ui nottament de virer ce casque

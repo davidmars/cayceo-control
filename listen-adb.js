@@ -14,10 +14,7 @@ adb.on(EVENT_ADB_ADD_DEVICE,function(deviceId){
     let casqueDevice=casquesManager.getByDeviceId(deviceId);
     if(!casqueDevice){
         adb.getIp(deviceId,function(ipString){
-            let ip=ipString.split(".");
-            //transforme l'ip en numéro
-            let numero=ip[ip.length-1];
-            let casqueModel=casquesManager.addCasque(numero,ipString,deviceId);
+            let casqueModel=casquesManager.addCasque(ipString,deviceId);
             //le nouveau casque est branché par définition
             casqueModel.setPlugged(true);
         })

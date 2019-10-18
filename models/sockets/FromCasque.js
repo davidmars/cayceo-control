@@ -16,9 +16,9 @@ class FromCasque{
         this.apkVersion="";
         /**
          * Adresse ip du casque
-         * @type {number}
+         * @type {string}
          */
-        this.ip = 0;
+        this.ip = "";
         /**
          * Moment où le message a été emis YYYY-MM-DD hh:mm:ss
          * @type {string}

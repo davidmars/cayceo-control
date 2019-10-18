@@ -23,26 +23,26 @@ class Wifi extends EventEmitter{
         });
 
         io.on('connection', function(socket){
-            console.log("io connection from",socket.handshake.address);
-            let numero=ipToNumero(socket.handshake.address);
+            let reg=/(.*)([0-9]{3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/gm;
+            let ip=socket.handshake.address; //:::ffff:192.168.0.47
+            ip=String(ip).replace(reg,"$2");
+            console.log("io connection from",ip);
             /**
              * Le casque concerné
              * @type {CasqueModel}
              */
-            let casque = casquesManager.getByNumero(numero);
+            let casque = casquesManager.getByIp(ip);
             if(!casque){
-                console.warn(`impossible de trouver un casque numéro ${numero}`);
+                console.warn(`impossible de trouver le casque ${ip}`);
                 console.warn(`Le casque n'a pas été branché en ADB ou a changé d'IP entre temps`);
                 return;
             }
             casque.socketId = socket.id;
-            io.to(socket.id).emit('setid', numero );
             io.to(socket.id).emit('setip', casque.ip);
-
 
             setTimeout(function(){
                 var tmp = new ServerMessage();
-                tmp.id = numero;
+                tmp.ip = ip;
                 tmp.msg = "Connected to server !";
                 io.emit( 'chat', tmp )
             }, 500);
@@ -65,7 +65,7 @@ class Wifi extends EventEmitter{
 
             socket.on('disconnect', function(){
                 console.error("socket disconect");
-                let casque = casquesManager.getByNumero(numero);
+                let casque = casquesManager.getByIp(ip);
                 if(casque){
                     casque.setOnline(false);
                 }
