@@ -52,8 +52,8 @@ function createWindow () {
 
 }
 
-function sendStatusToWindow(text,channel="MAJ done") {
-  mainWindow.webContents.send(channel, channel);
+function sendStatusToWindow(text,channel="MAJ") {
+  mainWindow.webContents.send(channel, text);
 }
 
 //temps entre deux test de nouvelle version
