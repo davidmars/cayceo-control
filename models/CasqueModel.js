@@ -107,6 +107,14 @@ class CasqueModel{
              */
             ready:null,
             /**
+             * true si la synchro de fichiers est en cours
+             */
+            busy:null,
+            /**
+             * Pourcentage d'installation total
+             */
+            percent:0,
+            /**
              * En fonction des contenus, met à jour ready
              */
             updateContenusReady:function(){
@@ -123,14 +131,7 @@ class CasqueModel{
                 }
                 this.ready=true;
             },
-            /**
-             * true si la synchro de fichiers est en cours
-             */
-            busy:null,
-            /**
-             * Pourcentage d'installation total
-             */
-            percent:0,
+
             /**
              * Teste s'il est possible de synchroniser un fichier sur le casque
              * @returns {boolean}
@@ -199,6 +200,8 @@ class CasqueModel{
             this.checkContenusExists();
             this.syncContenus();
             this.testAPK();
+        }else{
+            this.contenusSynchro.busy=false
         }
         this.refreshDisplay();
     }
