@@ -56,6 +56,10 @@ function sendStatusToWindow(text) {
   mainWindow.webContents.send('message', text);
 }
 
+//temps entre deux test de nouvelle version
+let updateIntervalMinutes=5;
+//temps donné pour une installation
+let updateIntervalInstallingMinutes=30;
 let updateTimeout=null;
 let updateFound=false;
 let updateLoop=function(){
@@ -71,7 +75,7 @@ let updateLoop=function(){
 
   updateTimeout=setTimeout(function(){
     updateLoop();
-  },1*60*1000);
+  },updateIntervalMinutes*60*1000);
 };
 
 // This method will be called when Electron has finished
@@ -111,7 +115,7 @@ autoUpdater.on('update-available', (info) => {
   //les débloquera dans 10 minutes
   setTimeout(function(){
     updateFound=false;
-  },10*60*1000)
+  },updateIntervalInstallingMinutes*60*1000)
 });
 autoUpdater.on('update-not-available', (info) => {
   sendStatusToWindow('Update not available.');
