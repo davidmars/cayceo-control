@@ -128,6 +128,10 @@ class CasqueModel{
              */
             busy:null,
             /**
+             * Pourcentage d'installation total
+             */
+            percent:0,
+            /**
              * Teste s'il est possible de synchroniser un fichier sur le casque
              * @returns {boolean}
              */
@@ -399,6 +403,7 @@ class CasqueModel{
                                     },
                                     function (percent) {
                                         contenu.status = `${percent}%`;
+                                        me.contenusSynchro.percent=percent;
                                         me.refreshDisplay();
                                     }, function () {
                                         contenu.status = `error on copy`;
@@ -429,9 +434,10 @@ class CasqueModel{
             casqueUi.setBattery(me.batteryLevel);
             casqueUi.setOnline(me.online);
             casqueUi.displayTime(me._playRemainingSeconds);
-            console.log("me.isPlaying",me.isPlaying);
-
             casqueUi.setContenusReady(me.contenusSynchro.ready);
+            if(!me.contenusSynchro.ready){
+                casqueUi.setCopyProgress(me.contenusSynchro.percent);
+            }
             casqueUi.setApkIsOk(me.isApkOk());
             if(me.contenuPath){
                 casqueUi.setContenuPath(me.contenuPath);
