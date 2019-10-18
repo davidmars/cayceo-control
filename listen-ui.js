@@ -30,6 +30,12 @@ ui.on(CMD.REBOOT,function(){
         app.exit(0);
     },1000*1);
 });
+ui.on(CMD.INSTALL_AND_REBOOT,function(){
+    setTimeout(function(){
+        app.relaunch();
+        app.exit(0);
+    },1000*1);
+});
 
 //Efface tout les fichiers locaux et redémare l'application
 ui.on(CMD.RESET_ALL,function(){
