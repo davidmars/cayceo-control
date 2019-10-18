@@ -43,6 +43,11 @@ class FromCasque{
          */
         this.remainingSeconds = -1;
         /**
+         * Si -1 ne joue pas, si 1 joue si 0 alors c'est qu'on sait pas
+         * @type {number}
+         */
+        this.isPlaying=0;
+        /**
          * Liste de contenus présents sur le casque
          * Si null veut dire qu'on n'en sait rien
          * @type {String[]|null}
