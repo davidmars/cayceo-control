@@ -53,7 +53,7 @@ function createWindow () {
 }
 
 function sendStatusToWindow(text,channel="MAJ done") {
-  mainWindow.webContents.send(type, channel);
+  mainWindow.webContents.send(channel, channel);
 }
 
 //temps entre deux test de nouvelle version
