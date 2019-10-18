@@ -39,7 +39,7 @@ ui.on(CMD.CASQUE_REMOVE,function(ip){
 ui.on(CMD.CASQUE_REBOOT,function(ip){
     let c= casquesManager.getByIp(ip);
     if(!c.plugged){
-        alert(`Il faut que le casque ${ip} soit branché`);
+        alert(`Il faut que le casque ${ip} soit branché pour le redémarrer`);
         return
     }
     adb.reboot(c.deviceId);

@@ -176,17 +176,9 @@ class CasqueModelsManager extends EventEmitter{
      */
     wakeUp(){
         let me=this;
-        me.wakeUpInterval=setInterval(function(){
-            for(let i=0; i<me._casques.length; i++){
-                let c=me._casques[i];
-                c.wakeUp();
-            }
-        },1000)
-    }
-
-    sleep(){
-        if(this.wakeUpInterval){
-            clearInterval(this.wakeUpInterval);
+        for(let i=0; i<me._casques.length; i++){
+            let c=me._casques[i];
+            c.wakeUp();
         }
     }
 
