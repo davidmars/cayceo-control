@@ -5,7 +5,7 @@ const electron = require('electron');
 const path = require('path')
 const { autoUpdater } = require("electron-updater");
 
-autoUpdater.checkForUpdatesAndNotify();
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -35,7 +35,6 @@ function createWindow () {
   }
 
 
-
   // and load the index.html of the app.
   mainWindow.loadFile('index.html')
 
@@ -49,12 +48,25 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+
+
+}
+
+function sendStatusToWindow(text) {
+  mainWindow.webContents.send('message', text);
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.on('ready', createWindow)
+app.on('ready', function(){
+  createWindow();
+  sendStatusToWindow('checkForUpdatesAndNotify...');
+  autoUpdater.checkForUpdatesAndNotify();
+  setInterval(function(){
+    autoUpdater.checkForUpdatesAndNotify();
+  },60*1000);
+});
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
@@ -71,3 +83,28 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+
+
+autoUpdater.on('checking-for-update', () => {
+  sendStatusToWindow('Checking for update...');
+});
+autoUpdater.on('update-available', (info) => {
+  sendStatusToWindow('Update available.');
+});
+autoUpdater.on('update-not-available', (info) => {
+  sendStatusToWindow('Update not available.');
+});
+autoUpdater.on('error', (err) => {
+  sendStatusToWindow('Error in auto-updater. ' + err);
+});
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  sendStatusToWindow(log_message);
+});
+autoUpdater.on('update-downloaded', (info) => {
+  sendStatusToWindow('Update downloaded');
+  autoUpdater.quitAndInstall();
+});

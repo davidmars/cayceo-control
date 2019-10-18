@@ -24,6 +24,12 @@ window.conf=new Conf();
 window.conf.serverRoot="https://jukeboxvr.fr"; //
 window.conf.appDirectoryStorageName="cayceo-control/prod";
 
+// Listen for messages
+const {ipcRenderer} = require('electron');
+ipcRenderer.on('message', function(event, text) {
+    ui.log(`Mise à jour du programme - ${event} - ${text}`,true);
+})
+
 //machine
 window.machine=new Machine();
 machine.on(EVENT_READY,function(){
