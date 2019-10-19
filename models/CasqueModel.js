@@ -79,7 +79,7 @@ class CasqueModel{
 
         //petite boucle toutes les 10 secondes
         let interval=setInterval(function(){
-            if(this.destroyed){
+            if(me.destroyed){
                 clearInterval(interval);
                 return;
             }
