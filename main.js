@@ -28,7 +28,8 @@ function createWindow () {
     if(electron.screen.getAllDisplays().length>1){
       mainWindow.setPosition(electron.screen.getAllDisplays()[1].bounds.x,0);
     }
-    mainWindow.setAlwaysOnTop(true, "main-menu");
+    mainWindow.maximize();
+    //mainWindow.setAlwaysOnTop(true, "main-menu");
     mainWindow.webContents.openDevTools();
   }else{
     mainWindow.setFullScreen(true);

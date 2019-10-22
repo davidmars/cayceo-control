@@ -6,6 +6,7 @@ const FileSystemUtils = require('./utils/FileSystemUtils');
 
 const electron = require('electron');
 const remote = electron.remote;
+const isDevelopment = process.mainModule.filename.indexOf('app.asar') === -1;
 
 const Conf=                 require("./utils/Conf");
 const Machine =             require('./utils/Machine.js');
@@ -17,6 +18,9 @@ require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
 ui.debugMode.disable();
+if(isDevelopment){
+    ui.debugMode.enable();
+}
 ui.pinCode="1707";
 
 //conf
