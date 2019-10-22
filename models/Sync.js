@@ -166,6 +166,10 @@ class Sync extends EventEmitter{
                 }
                 if(json.success){
                     console.log("json",json);
+                    ui.popIns.webApiData.displayData(json);
+                    if(json.json.jukebox.pin){
+                        ui.pinCode=json.json.jukebox.pin;
+                    }
                     if(json.json.synchroId !== me.synchroId){
                         me.setNewJson(json);
                         ui.log("Mise à jour du contenu nécessaire");
@@ -201,7 +205,8 @@ class Sync extends EventEmitter{
         this.data=json;
         this._applyLocalAndCheckReady();
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
-        ui.popIns.webApiData.displayData(json);
+
+
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
         if(oldJson && oldJson.json && oldJson.json.contenus){
             let newUids=[];
