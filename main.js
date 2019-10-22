@@ -52,6 +52,16 @@ function createWindow () {
 
 }
 
+let timeout=null;
+function checkUpdate(){
+  if(timeout){
+    clearInterval(timeout);
+  }
+  timeout=setTimeout(function(){
+    autoUpdater.checkForUpdatesAndNotify();
+  },60*1000);
+}
+
 // Fonction reçue de CMD.INSTALL_AND_REBOOT
 ipcMain.on('INSTALL_AND_REBOOT', (event, arg) => {
   autoUpdater.quitAndInstall();
@@ -72,12 +82,11 @@ autoUpdater.on('update-not-available', (info) => {
   setTimeout(function(){
     sendStatusToWindow("");
   },3*1000);
-  setTimeout(function(){
-    autoUpdater.checkForUpdatesAndNotify();
-  },60*1000);
+  checkUpdate();
 });
 autoUpdater.on('error', (err) => {
   sendStatusToWindow('Error ' + err);
+  checkUpdate();
 });
 autoUpdater.on('download-progress', (progressObj) => {
   //let log_message = "Download speed: " + progressObj.bytesPerSecond;
@@ -99,10 +108,7 @@ app.on('activate', function () {
 });
 app.on('ready', function(){
   createWindow();
-  setTimeout(function(){
-    autoUpdater.checkForUpdatesAndNotify();
-  },5*1000);
-
+  checkUpdate();
 });
 
 
