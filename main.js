@@ -61,7 +61,8 @@ function sendStatusToWindow(text,channel="MAJ") {
   mainWindow.webContents.send(channel, text);
 }
 autoUpdater.on('checking-for-update', () => {
-  sendStatusToWindow('Recherche de nouvelle version');
+  //sendStatusToWindow('Recherche de nouvelle version');
+  sendStatusToWindow('');
 });
 autoUpdater.on('update-available', (info) => {
   sendStatusToWindow(`Téléchargement de v.${info.version }`);
@@ -84,7 +85,7 @@ autoUpdater.on('download-progress', (progressObj) => {
   //log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
   //sendStatusToWindow(`Mise à jour ${Math.round(Number(progressObj.percent))}%`);
   sendStatusToWindow("download-progress");
-  sendStatusToWindow(progressObj.percent);
+  sendStatusToWindow(`${Math.floor(Number(progressObj.percent))}%`);
 });
 autoUpdater.on('update-downloaded', (info) => {
   sendStatusToWindow(`Installer v.${info.version }`,"MAJ done");
