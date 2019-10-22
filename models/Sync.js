@@ -165,7 +165,7 @@ class Sync extends EventEmitter{
                     me.isOnline=true;
                 }
                 if(json.success){
-                    console.log("json",json);
+                    //console.log("json",json);
                     ui.popIns.webApiData.displayData(json);
                     if(json.json.jukebox.pin){
                         ui.pinCode=json.json.jukebox.pin;
