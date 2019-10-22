@@ -53,13 +53,13 @@ function createWindow () {
 }
 
 let timeout=null;
-function checkUpdate(){
+function checkUpdate(delaySeconds=60){
   if(timeout){
     clearInterval(timeout);
   }
   timeout=setTimeout(function(){
     autoUpdater.checkForUpdatesAndNotify();
-  },60*1000);
+  },delaySeconds*1000);
 }
 
 // Fonction reçue de CMD.INSTALL_AND_REBOOT
@@ -85,8 +85,11 @@ autoUpdater.on('update-not-available', (info) => {
   checkUpdate();
 });
 autoUpdater.on('error', (err) => {
-  sendStatusToWindow('Error ' + err);
-  checkUpdate();
+    sendStatusToWindow('Error ' + err);
+    setTimeout(function(){
+        sendStatusToWindow("");
+    },5*1000);
+  checkUpdate(120);
 });
 autoUpdater.on('download-progress', (progressObj) => {
   //let log_message = "Download speed: " + progressObj.bytesPerSecond;
@@ -108,7 +111,7 @@ app.on('activate', function () {
 });
 app.on('ready', function(){
   createWindow();
-  checkUpdate();
+  checkUpdate(20);
 });
 
 
