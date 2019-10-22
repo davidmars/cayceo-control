@@ -78,23 +78,8 @@ class CasqueModel{
 
 
         //petite boucle toutes les 10 secondes
-        let interval=setInterval(function(){
-            if(me.destroyed){
-                clearInterval(interval);
-                return;
-            }
-            if(!me._online){
-                if(me.plugged){
-                    //niveau de batterie depuis ADB si on peut pas faire autrement
-                    adb.getBattery(me.deviceId,function(level){
-                        me.setBatteryLevel(level);
-                    });
-                }else{
-                    me.setBatteryLevel("?");
-                }
-            }
-            me.testAPK();
-
+        me._interval=setInterval(function(){
+            me.loop();
         },1000*10);
 
 
@@ -170,6 +155,54 @@ class CasqueModel{
          * @type {null|string[]}
          */
         this.socketFiles=null;
+
+    }
+
+    loop(){
+        let me=this;
+        //autodestruction
+        if(me.destroyed){
+            clearInterval(me._interval);
+            return;
+        }
+        //test de batterie
+        if(!me._online){
+            if(me.plugged){
+                //niveau de batterie depuis ADB si on peut pas faire autrement
+                adb.getBattery(me.deviceId,function(level){
+                    me.setBatteryLevel(level);
+                });
+            }else{
+                me.setBatteryLevel("?");
+            }
+        }
+        //teste si l'apk est à jour
+        me.testAPK();
+
+        //teste si les contenus sont à jour
+        me.checkContenusExists();
+
+        //teste si on a des fichiers à effacer sur le casque
+        if(!me.contenusSynchro.busy //si on est pas entrain de copier des bidules
+            && me.contenusSynchro.ready //si on est certain que tout va bien
+            && me.online //doit etre online pour s'assurer que la listes des fichiers va bien
+            && me.plugged //doit etre branché pour adb
+            && me.socketFiles //doit avoir des fichiers
+            && sync.files.length>0 //être certain que la synchro web contient bien des machins
+        ){
+            for(let f of me.socketFiles){
+                if(sync.files.indexOf(f)===-1){
+                    console.warn("il faut effacer "+f,sync.files);
+                    adb.deleteFile(me.deviceId,f,function(){
+                        wifi.askFileList(me);
+                    });
+                    break; //on efface pas plus d'un fichier à la fois
+                }else{
+                    //console.log("il ne faut pas effacer "+f);
+                }
+            }
+
+        }
 
     }
 
@@ -309,6 +342,7 @@ class CasqueModel{
         for(let i=0;i<me.contenus.length;i++) {
             let cont = me.contenus[i];
             console.log("checkContenusExists",cont.file);
+
             if(me.socketFiles!==null){
                 if(me.socketFiles.indexOf(cont.file)>-1){
                     cont.fileExistsby.socket=cont.isOnCasque=true;
@@ -322,27 +356,30 @@ class CasqueModel{
                     cont.fileExistsby.socket=false
                 }
             }
-            if(me.plugged){
-                cont.fileExistsby.adb="testing";
-                adb.contenuExists(me.deviceId,cont.file,function(exist){
-                    if(exist){
-                        cont.fileExistsby.adb=cont.isOnCasque=true;
-                        if(cont.shouldBeDeleted){
-                            cont.status="to delete";
-                            me.syncContenus();
+            if(cont.status===""){
+                if(me.plugged){
+                    cont.fileExistsby.adb="testing";
+                    adb.contenuExists(me.deviceId,cont.file,function(exist){
+                        if(exist){
+                            cont.fileExistsby.adb=cont.isOnCasque=true;
+                            if(cont.shouldBeDeleted){
+                                cont.status="to delete";
+                                me.syncContenus();
+                            }else{
+                                cont.status="ok";
+                            }
                         }else{
-                            cont.status="ok";
+                            cont.fileExistsby.adb=cont.isOnCasque=false;
+                            if(!cont.shouldBeDeleted){
+                                cont.status="to copy";
+                                me.syncContenus();
+                            }
                         }
-                    }else{
-                        cont.fileExistsby.adb=cont.isOnCasque=false;
-                        if(!cont.shouldBeDeleted){
-                            cont.status="to copy";
-                            me.syncContenus();
-                        }
-                    }
-                    me.contenusSynchro.updateContenusReady();
-                });
+                        me.contenusSynchro.updateContenusReady();
+                    });
+                }
             }
+
         }
         me.contenusSynchro.updateContenusReady();
     }

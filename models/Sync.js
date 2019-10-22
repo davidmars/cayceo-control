@@ -59,6 +59,12 @@ class Sync extends EventEmitter{
         this.data={};
 
         /**
+         * Liste des fichiers (bundles) tels qu'ils devraient être référencés sur les casques
+         * @type {string[]}
+         */
+        this.files=[];
+
+        /**
          * @private
          * Chemin vers le fichier en local
          * @type {string}
@@ -73,7 +79,6 @@ class Sync extends EventEmitter{
             me._applyLocalAndCheckReady();
             me.synchroId = me.data.json.synchroId;
             ui.log("la version du contenu est " + this.synchroId);
-            ui.popIns.webApiData.displayData(json);
         } else {
             ui.log("sync.json va être téléchargé pour la première fois...");
             ui.popIns.webApiData.displayData("pas encore téléchargé...");
@@ -121,17 +126,16 @@ class Sync extends EventEmitter{
             apk.localPathAboslute_downloaded = fs.existsSync(apk.localPathAboslute);
         }
         //contenus
+        me.files=[];
         for(let i=0;i<this.getContenus().length;i++){
             let c=this.getContenus()[i];
+            me.files.push(c.localFile);
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
             c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
-
             c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
             c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
-
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
             c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
-
             let contenuWasReady=c.ready;
             c.ready=c.localFileAbsolute_downloaded && c.localThumbAbsolute_downloaded && c.localThumbNoResizeAbsolute_downloaded;
             if(!contenuWasReady && c.ready){
@@ -205,7 +209,7 @@ class Sync extends EventEmitter{
         this.data=json;
         this._applyLocalAndCheckReady();
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
-
+        ui.popIns.webApiData.displayData(json);
 
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
         if(oldJson && oldJson.json && oldJson.json.contenus){

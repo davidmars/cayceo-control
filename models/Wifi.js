@@ -51,7 +51,7 @@ class Wifi extends EventEmitter{
 
                 //io.emit('chat', msg); // exemple emit
                 var json = JSON.parse(msg);
-                console.log("msg json from ", json.ip," = ",json);
+                //console.log("msg json from ", json.ip," = ",json);
                 let casque = casquesManager.getByIp(json.ip);
                 if(!casque){
                     //dans ce cas on a casque connecté en socket mais le casque n'est pas référencé

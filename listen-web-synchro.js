@@ -72,8 +72,6 @@ sync.on(EVENT_UPDATING,function(){
     document.title="Mise à jour en cours...";
     ui.isSyncing=true;
 });
-
-
 sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
     ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
     casquesManager.installCurrentApk();
