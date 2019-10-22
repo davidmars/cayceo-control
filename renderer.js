@@ -16,8 +16,8 @@ const Wifi=    require("./models/Wifi");
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
-//TODO changer ça en prod: passe en mode debug direct
-ui.debugMode.enable();
+ui.debugMode.disable();
+ui.pinCode="1707";
 
 //conf
 window.conf=new Conf();

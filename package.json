@@ -1,6 +1,6 @@
 {
   "name": "cayceo-control",
-  "version": "0.1.51",
+  "version": "0.2.0",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
@@ -19,12 +19,12 @@
   "author": "davidmars",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^6.0.9",
+    "electron": "^6.1.0",
     "electron-builder": "^21.2.0"
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.2.10",
+    "cayceo-ui": "^1.3.1",
     "electron-updater": "^4.1.2",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
