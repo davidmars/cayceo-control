@@ -1,7 +1,7 @@
-const ContenuSurCasque=require("./ContenuSurCasque.js");
-const CasqueApkInfos=require("./CasqueApkInfos.js");
-const CasqueNowPlaying=require("./CasqueNowPlaying.js");
-const CasqueContenusSynchro=require("./CasqueContenusSynchro.js");
+const ContenuSurCasque=require("./casqueExtensions/ContenuSurCasque.js");
+const CasqueApkInfos=require("./casqueExtensions/CasqueApkInfos.js");
+const CasqueNowPlaying=require("./casqueExtensions/CasqueNowPlaying.js");
+const CasqueContenusSynchro=require("./casqueExtensions/CasqueContenusSynchro.js");
 /**
  * C'est la représentation des données propres à un casque
  */

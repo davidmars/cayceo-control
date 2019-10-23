@@ -1,6 +1,6 @@
 const EventEmitter = require("event-emitter-es6");
 const CasqueModel = require("./CasqueModel");
-const CasqueJsonStored = require("./CasqueJsonStored");
+const CasqueJsonStored = require("./casqueExtensions/CasqueJsonStored");
 const fs = require("fs");
 
 class CasqueModelsManager extends EventEmitter{
