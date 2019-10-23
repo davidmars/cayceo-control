@@ -267,7 +267,8 @@ class CasqueModel{
     }
 
     /**
-     * Supprime le contenu de l'index et du device
+     * Supprime le contenu de l'index
+     * La suppression du fichier reelle se fera plus tard
      * @param file
      */
     removeContenu(file){
@@ -275,6 +276,12 @@ class CasqueModel{
         if(c){
             c.shouldBeDeleted=true;
             c.status="to delete";
+        }
+        for(let i =0;i<this.contenus.length;i++) {
+            if(this.contenus[i].file===file){
+                this.contenus.splice(i,1);
+                break;
+            }
         }
         this.checkContenusExists();
         this.refreshDisplay();
@@ -292,12 +299,7 @@ class CasqueModel{
             if(me.socketFiles!==null){
                 if(me.socketFiles.indexOf(cont.file)>-1){
                     cont.fileExistsby.socket=cont.isOnCasque=true;
-                    if(cont.shouldBeDeleted){
-                        cont.status="to delete";
-                        me.syncContenus();
-                    }else{
-                        cont.status="ok";
-                    }
+                    cont.status="ok";
                 }else{
                     cont.fileExistsby.socket=false
                 }
@@ -308,18 +310,11 @@ class CasqueModel{
                     adb.contenuExists(me.deviceId,cont.file,function(exist){
                         if(exist){
                             cont.fileExistsby.adb=cont.isOnCasque=true;
-                            if(cont.shouldBeDeleted){
-                                cont.status="to delete";
-                                me.syncContenus();
-                            }else{
-                                cont.status="ok";
-                            }
+                            cont.status="ok";
                         }else{
                             cont.fileExistsby.adb=cont.isOnCasque=false;
-                            if(!cont.shouldBeDeleted){
-                                cont.status="to copy";
-                                me.syncContenus();
-                            }
+                            cont.status="to copy";
+                            me.syncContenus();
                         }
                         me.contenusSynchro.updateContenusReady();
                     });
@@ -334,11 +329,11 @@ class CasqueModel{
 
 
     /**
-     * Copie/supprime les contenus vers le casque récursivement
+     * Copie les contenus vers le casque récursivement
      * Une seule copie de fichier à la fois est faite sur le casque
      */
     syncContenus(){
-        console.log("syncContenus...")
+        console.log("syncContenus...");
         let me=this;
 
         for(let i =0;i<me.contenus.length;i++){
@@ -352,53 +347,34 @@ class CasqueModel{
             if(contenu.status!=="ok"){
                 switch (contenu.isOnCasque) {
                     case true: //le contenu est sur le casque
-                        if(contenu.shouldBeDeleted){ //et il faut le virer
-                            if(contenu.status!==    "delete in progress..."){
-                                contenu.status=     "delete in progress...";
-                                me.contenusSynchro.busy=true;
-                                adb.deleteFile(me.deviceId,contenu.file,function(){
-                                    contenu.status="ok";
-                                    contenu.isOnCasque=false;
-                                    me.contenusSynchro.busy=false;
-                                    me.syncContenus();//recursive call
-                                });
-                                me.refreshDisplay();
-                            }
-                        }else{ //tout va bien
-                            contenu.status="ok";
-                            me.refreshDisplay();
-                        }
+                        contenu.status="ok";
+                        me.refreshDisplay();
                         break;
                     case false: //il est pas sur le casque
-
-                        if(contenu.shouldBeDeleted){ //tout va bien
-                            contenu.status="ok";
-                            me.refreshDisplay();
-                        }else{ //il faut le copier
-                            if(contenu.status!==    "copy in progress...") {
-                                contenu.status =    "copy in progress...";
-                                me.contenusSynchro.busy = true;
-                                adb.pushContenu(
-                                    me.deviceId,
-                                    contenu.file,
-                                    function () {
-                                        contenu.status = "ok";
-                                        me.refreshDisplay();
-                                        me.contenusSynchro.busy = false;
-                                        me.syncContenus();//recursive call
-                                    },
-                                    function (percent) {
-                                        contenu.status = `${percent}%`;
-                                        me.contenusSynchro.percent=percent;
-                                        me.refreshDisplay();
-                                    }, function () {
-                                        contenu.status = `error on copy`;
-                                        me.contenusSynchro.busy = false;
-                                        me.refreshDisplay();
-                                    }
-                                );
-                            }
+                        if(contenu.status!==    "copy in progress...") {
+                            contenu.status =    "copy in progress...";
+                            me.contenusSynchro.busy = true;
+                            adb.pushContenu(
+                                me.deviceId,
+                                contenu.file,
+                                function () {
+                                    contenu.status = "ok";
+                                    me.refreshDisplay();
+                                    me.contenusSynchro.busy = false;
+                                    me.syncContenus();//recursive call
+                                },
+                                function (percent) {
+                                    contenu.status = `${percent}%`;
+                                    me.contenusSynchro.percent=percent;
+                                    me.refreshDisplay();
+                                }, function () {
+                                    contenu.status = `error on copy`;
+                                    me.contenusSynchro.busy = false;
+                                    me.refreshDisplay();
+                                }
+                            );
                         }
+
                     break;
                 }
             }

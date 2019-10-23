@@ -39,10 +39,6 @@ class CasqueContenusSynchro {
                 this.ready=false;
                 return;
             }
-            if(cont.shouldBeDeleted===true && cont.isOnCasque===false){
-                casque.contenus.splice(i,1);
-                cont=null;
-            }
         }
         this.percent=0;
         this.ready=true;
