@@ -409,11 +409,16 @@ class Sync extends EventEmitter{
                     contenu.serverFile
                     ,contenu.localFileAbsolute
                     ,function(file){
-                        log.setContent(`Téléchargement vers ${file} terminé :)`)
+                        ui.layout.setContenuUpdate(`${contenu.name} terminé`);
+                        setTimeout(function(){
+                            ui.layout.setContenuUpdate(null);
+                        },3000);
+                        log.setContent(`Téléchargement vers ${file} terminé :)`);
                         me.dwdNext();
                         me._applyLocalAndCheckReady();
                     }
                     ,function(percent,bytes,total){
+                        ui.layout.setContenuUpdate(`${contenu.name} ${percent}%`);
                         log.setContent([
                             "Téléchargement"
                             ,contenu.serverFile
@@ -423,6 +428,10 @@ class Sync extends EventEmitter{
                     }
                     ,function (err) {
                         me.emit(EVENT_NETWORK_ERROR);
+                        ui.layout.setContenuUpdate(`${contenu.name} error`);
+                        setTimeout(function(){
+                            ui.layout.setContenuUpdate(null);
+                        },3000);
                         log.setContent([
                             "Erreur de téléchargement"
                             ,contenu.serverFile
