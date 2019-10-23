@@ -55,7 +55,7 @@ machine.on(EVENT_READY,function(){
     ui.log(`Node v: ${process.versions.node}`,true);
     ui.log(`Chromium v: ${process.versions.chrome}`,true);
     ui.log(`Electron v: ${process.versions.electron}`,true);
-    ui.log(`Caiceo-ui v: ${ui.version}`,true);
+    ui.log(`Cayceo-ui v: ${ui.version}`,true);
     ui.log(`Server: ${conf.serverRoot}`,true);
     //machine name & MAC
     ui.log("MACHINE NAME: "+machine.name,true);
