@@ -3,6 +3,11 @@
  * @type {string}
  */
 window.EVENT_READY="EVENT_READY";
+/**
+ * Quand la synchronisation est suffisant pour afficher l'ui (cependant on peut continuer à télécharger des trucs en tache de fond)
+ * @type {string}
+ */
+window.EVENT_SYNC_READY_TO_DISPLAY="EVENT_SYNC_READY_TO_DISPLAY";
 
 /**
  * Qunad une erreur de réseau survient

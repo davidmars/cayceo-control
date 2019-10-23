@@ -98,6 +98,7 @@ class Sync extends EventEmitter{
                 me.emit(EVENT_OFFLINE);
             }
             me.syncing=false;
+            me.emit(EVENT_SYNC_READY_TO_DISPLAY);
             me.emit(EVENT_READY);
         })
     }
@@ -109,6 +110,8 @@ class Sync extends EventEmitter{
      */
     _applyLocalAndCheckReady(){
         let me=this;
+        let apkOk=false;
+        let contenuOk=false;
 
         //logo
         let logo=me.data.json.logomachine;
@@ -118,12 +121,12 @@ class Sync extends EventEmitter{
         if(!logoWasReady && logo.localPathAboslute_downloaded){
             me.emit(EVENT_WEB_SYNC_LOGO_READY,logo.localPathAboslute);
         }
-
         //apk
         if(me.data.json.casquesapk && me.data.json.casquesapk.localFile) {
             let apk = me.data.json.casquesapk;
             apk.localPathAboslute = this.localStoragePath + "/" + apk.localFile;
             apk.localPathAboslute_downloaded = fs.existsSync(apk.localPathAboslute);
+            apkOk=apk.localPathAboslute_downloaded;
         }
         //contenus
         me.files=[];
@@ -141,6 +144,13 @@ class Sync extends EventEmitter{
             if(!contenuWasReady && c.ready){
                 me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
             }
+            if(c.ready){
+                contenuOk=true;
+            }
+        }
+
+        if(contenuOk && apkOk){
+            me.emit(EVENT_SYNC_READY_TO_DISPLAY);
         }
     }
 
@@ -444,6 +454,7 @@ class Sync extends EventEmitter{
             }
         }
         me.emit(EVENT_WEB_SYNC_UPDATED);
+        me.emit(EVENT_SYNC_READY_TO_DISPLAY);
         me.emit(EVENT_READY);
         me.syncing=false;
 
