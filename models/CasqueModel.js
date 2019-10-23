@@ -17,27 +17,6 @@ class CasqueModel{
          */
         this.ip="";
         /**
-         * Dernier apk a avoir été installé avec succès
-         * Cette donnée est enregistrée d'une session sur l'autre
-         * @type {string}
-         */
-        this.lastApk="on sait pas :(";
-        /**
-         * Qualque informations sur les éventuelles installations de l'APK
-         * @type {{installation: {quand: string, status: string}}}
-         */
-        this.apkInfos={
-            installation:{
-                when:'pas depuis le dernier reboot',
-                status:'',
-                installing:false
-            },
-
-        };
-
-        //-----------propriétés live déduites depuis ADB
-
-        /**
          * Branché (en ADB) ou pas
          * @private
          * @type {boolean}
@@ -52,37 +31,48 @@ class CasqueModel{
          */
         this._online=false;
         /**
+         * Informations à propos de la lecture en cours de contenu
+         * @type {{isPlaying: null, contenuPath: string, remainingSeconds: null}}
+         */
+        this.nowPlaying={
+            isPlaying:null,
+            contenuPath:"",
+            remainingSeconds:null
+        };
+        /**
+         * Dernier apk a avoir été installé avec succès
+         * Cette donnée est enregistrée d'une session sur l'autre
+         * @type {string}
+         */
+        this.lastApk="on sait pas :(";
+        /**
+         * Quelque informations sur les éventuelles installations de l'APK
+         * @type {{installation: {quand: string, status: string}}}
+         */
+        this.apkInfos={
+            version:null,
+            installation:{
+                when:'pas depuis le dernier reboot',
+                status:'',
+                installing:false
+            },
+        };
+
+
+        //-----------propriétés live déduites depuis ADB
+
+
+        /**
          * Le niveau de batterie
          * @private
          * @type {number}
          */
         this._batteryLevel=0;
-        /**
-         * L'identifiant du contenu en cours de lecture
-         * @private
-         * @type {null|string}
-         */
-        this._contenuPath=null;
-        /**
-         * Est en cours de lecture ou non
-         * @private
-         * @type {boolean}
-         */
-        this._isPlaying=false;
-        /**
-         * Nombre de secondes de lecture restante
-         * @private
-         * @type {number}
-         */
-        this._playRemainingSeconds=0;
-
 
         //petite boucle toutes les 10 secondes
         me._interval=setInterval(function(){
             me.loop();
         },1000*10);
-
-
 
         //------------contenus-------------------------
 
@@ -158,6 +148,12 @@ class CasqueModel{
 
     }
 
+    /**
+     * Un boucle lancée toutes les 10 secondes qui va...
+     * Tester la batterie via ADB si jamais on est offline
+     * Vérifier que les contenus du casque sont à jour
+     * Effacer les fichiers inutiles sur le casque (si toutes les conditions sont rencontrées pour faire cette opération)
+     */
     loop(){
         let me=this;
         //autodestruction
@@ -165,6 +161,7 @@ class CasqueModel{
             clearInterval(me._interval);
             return;
         }
+
         //test de batterie
         if(!me._online){
             if(me.plugged){
@@ -260,9 +257,9 @@ class CasqueModel{
     }
     get online() {return this._online;}
 
-    get contenuPath() {return this._contenuPath;}
 
-    get isPlaying() {return this._isPlaying}
+
+
 
 
 
@@ -305,13 +302,18 @@ class CasqueModel{
         this.socket=json;
         //on ne passe pas par les setters ici afin de ne faire qu'un seul refresh deisplay
         this._online=true;
-        this._isPlaying = json.isPlaying === 1;
         if(json.batterylevel !== -1){
             this._batteryLevel=json.batterylevel;
         }
-        this._playRemainingSeconds = json.remainingSeconds;
+        //apk
+        this.apkInfos.version=json.apkVersion;
+        //fichiers
         this.socketFiles=json.fileList;
-        this._contenuPath= json.contenuPath;
+        //infos sur la lecture en cours
+        this.nowPlaying.isPlaying = json.isPlaying === 1;
+        this.nowPlaying.contenuPath = json.contenuPath;
+        this.nowPlaying.remainingSeconds = json.remainingSeconds;
+
         if ( json.msg === "Application Pause"){
             this._online=false;
         }
@@ -473,18 +475,20 @@ class CasqueModel{
             casqueUi.setBatteryPlugged(me.plugged);
             casqueUi.setBattery(me.batteryLevel);
             casqueUi.setOnline(me.online);
-            casqueUi.displayTime(me._playRemainingSeconds);
             casqueUi.setContenusReady(me.contenusSynchro.ready);
             if(!me.contenusSynchro.ready){
                 casqueUi.setCopyProgress(me.contenusSynchro.percent);
             }
             casqueUi.setApkIsOk(me.isApkOk());
-            if(me.contenuPath){
-                casqueUi.setContenuPath(me.contenuPath);
+
+            //lecture de contenu
+            if(me.nowPlaying.contenuPath){
+                casqueUi.setContenuPath(me.nowPlaying.contenuPath);
             }else{
                 casqueUi.setContenu(null);
             }
-            casqueUi.setIsPlaying(me.isPlaying);
+            casqueUi.displayTime(me.nowPlaying.remainingSeconds);
+            casqueUi.setIsPlaying(me.nowPlaying.isPlaying);
 
         }
     }
