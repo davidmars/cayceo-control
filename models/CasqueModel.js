@@ -1,4 +1,7 @@
 const ContenuSurCasque=require("./ContenuSurCasque.js");
+const CasqueApkInfos=require("./CasqueApkInfos.js");
+const CasqueNowPlaying=require("./CasqueNowPlaying.js");
+const CasqueContenusSynchro=require("./CasqueContenusSynchro.js");
 /**
  * C'est la représentation des données propres à un casque
  */
@@ -32,32 +35,14 @@ class CasqueModel{
         this._online=false;
         /**
          * Informations à propos de la lecture en cours de contenu
-         * @type {{isPlaying: null, contenuPath: string, remainingSeconds: null}}
+         * @type {CasqueNowPlaying}
          */
-        this.nowPlaying={
-            isPlaying:null,
-            contenuPath:"",
-            remainingSeconds:null
-        };
-        /**
-         * Dernier apk a avoir été installé avec succès
-         * Cette donnée est enregistrée d'une session sur l'autre
-         * @type {string}
-         */
-        this.lastApk="on sait pas :(";
+        this.nowPlaying=new CasqueNowPlaying();
         /**
          * Quelque informations sur les éventuelles installations de l'APK
-         * @type {{installation: {quand: string, status: string}}}
+         * @type {CasqueApkInfos}
          */
-        this.apkInfos={
-            version:null,
-            installation:{
-                when:'pas depuis le dernier reboot',
-                status:'',
-                installing:false
-            },
-        };
-
+        this.apkInfos=new CasqueApkInfos();
 
         //-----------propriétés live déduites depuis ADB
 
@@ -75,49 +60,11 @@ class CasqueModel{
         },1000*10);
 
         //------------contenus-------------------------
-
-        this.contenusSynchro={
-            /**
-             * true si les contenus sont prêts
-             */
-            ready:null,
-            /**
-             * true si la synchro de fichiers est en cours
-             */
-            busy:null,
-            /**
-             * Pourcentage d'installation total
-             */
-            percent:0,
-            /**
-             * En fonction des contenus, met à jour ready
-             */
-            updateContenusReady:function(){
-                for(let i =0;i<me.contenus.length;i++) {
-                    let cont = me.contenus[i];
-                    if(cont.status!=="ok" && cont.isOnCasque !== true){
-                        this.ready=false;
-                        return;
-                    }
-                    if(cont.shouldBeDeleted===true && cont.isOnCasque===false){
-                        me.contenus.splice(i,1);
-                        cont=null;
-                    }
-                }
-                this.ready=true;
-            },
-
-            /**
-             * Teste s'il est possible de synchroniser un fichier sur le casque
-             * @returns {boolean}
-             */
-            isPossible:function(){
-                return (
-                    me.contenusSynchro.busy!==true
-                    && me.plugged
-                )
-            }
-        };
+        /**
+         * Informe sur l'état général de copie des contenus
+         * @type {CasqueContenusSynchro}
+         */
+        this.contenusSynchro=new CasqueContenusSynchro(this);
 
         /**
          * Listes des fichiers qui doivent ou qui sont copiés sur le casque et leur état de copie
@@ -125,9 +72,12 @@ class CasqueModel{
          */
         this.contenus=[];
 
-
         //------------socket-------------------------
-
+        /**
+         * La liste des fichiers renvoyée par socket
+         * @type {null|string[]}
+         */
+        this.socketFiles=null;
         /**
          * L'identifiant de socket
          * @type {null}
@@ -140,11 +90,7 @@ class CasqueModel{
         this.socket={
             msg:"Aucun socket reçu pour le moment"
         };
-        /**
-         * La liste des fichiers renvoyée par socket...mais pas toujours :\
-         * @type {null|string[]}
-         */
-        this.socketFiles=null;
+
 
     }
 
@@ -208,7 +154,7 @@ class CasqueModel{
      * @returns {string|*|boolean}
      */
     isApkOk(){
-        return this.lastApk===sync.data.json.casquesapk.serverFile;
+        return this.apkInfos.lastApk===sync.data.json.casquesapk.serverFile;
     }
 
     /**
@@ -337,14 +283,12 @@ class CasqueModel{
     }
 
     /**
-     * Vérifie via node et adb si les contenus sont sur le casque
+     * Vérifie via socket puis adb si les contenus sont sur le casque
      */
     checkContenusExists(){
         let me=this;
         for(let i=0;i<me.contenus.length;i++) {
             let cont = me.contenus[i];
-            console.log("checkContenusExists",cont.file);
-
             if(me.socketFiles!==null){
                 if(me.socketFiles.indexOf(cont.file)>-1){
                     cont.fileExistsby.socket=cont.isOnCasque=true;
@@ -536,7 +480,7 @@ class CasqueModel{
             apk,
             function(){
                 //enregistre la derniere version de l'APK pour le prochain book de l'app
-                me.lastApk=sync.data.json.casquesapk.serverFile;
+                me.apkInfos.lastApk=sync.data.json.casquesapk.serverFile;
                 casquesManager._saveJson();
                 me.apkInfos.installation.when=new Date().toLocaleString();
                 me.apkInfos.installation.status="good !";

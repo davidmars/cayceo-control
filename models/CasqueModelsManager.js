@@ -1,5 +1,6 @@
 const EventEmitter = require("event-emitter-es6");
 const CasqueModel = require("./CasqueModel");
+const CasqueJsonStored = require("./CasqueJsonStored");
 const fs = require("fs");
 
 class CasqueModelsManager extends EventEmitter{
@@ -12,6 +13,11 @@ class CasqueModelsManager extends EventEmitter{
          */
         this._casques=[];
         /**
+         *
+         * @type {CasqueJsonStored[]}
+         */
+        let casquesFromJson=[];
+        /**
          * @private
          * Chemin vers le fichier en local où on enregistrera les ralations entre numéros et deviceId
          * @type {string}
@@ -19,21 +25,20 @@ class CasqueModelsManager extends EventEmitter{
         this.jsonPath=machine.appStoragePath+"/casques.json";
         //teste si le json existe
         if (fs.existsSync(this.jsonPath)) {
+            //lis le json
             let json = fs.readFileSync(me.jsonPath);
             json = JSON.parse(json);
-            me._casques = json;
+            casquesFromJson = json;
         } else {
+            //le sauvegarde pour la première fois
             this._saveJson();
         }
-        for(let i=0; i<this._casques.length; i++){
-            let ip     =this._casques[i].ip;
-            let id      =this._casques[i].deviceId;
-            let lastApk =this._casques[i].lastApk;
+        for(let i=0; i<casquesFromJson.length; i++){
             this._casques[i]=new CasqueModel();
-            this._casques[i].deviceId=id;
-            this._casques[i].ip=ip;
-            if(lastApk){
-                this._casques[i].lastApk=lastApk;
+            this._casques[i].deviceId=casquesFromJson[i].deviceId;
+            this._casques[i].ip=casquesFromJson[i].ip;
+            if(casquesFromJson[i].lastApk){
+                this._casques[i].apkInfos.lastApk=casquesFromJson[i].lastApk;
             }
             this.emit(EVENT_CASQUE_ADDED,this._casques[i]);
         }
@@ -45,17 +50,15 @@ class CasqueModelsManager extends EventEmitter{
      * @private
      */
     _saveJson(){
-        let json=[];
+        let casquesJson=[];
         for(let i=0; i<this._casques.length; i++){
-            json.push(
-                {
-                    "deviceId":this._casques[i].deviceId,
-                    "ip":this._casques[i].ip,
-                    "lastApk":this._casques[i].lastApk,
-                }
-            )
+            let casqueData=new CasqueJsonStored();
+            casqueData.deviceId=this._casques[i].deviceId;
+            casqueData.ip=this._casques[i].ip;
+            casqueData.lastApk=this._casques[i].apkInfos.lastApk;
+            casquesJson.push(casqueData);
         }
-        fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
+        fs.writeFileSync(this.jsonPath,JSON.stringify(casquesJson,null,2),{ encoding : 'utf8'});
     }
 
     /**
