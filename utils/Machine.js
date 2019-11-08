@@ -51,7 +51,7 @@ class Machine extends EventEmitter{
      */
     shutDown(){
         let exec = require('child_process').exec;
-        exec("shutdown /s");
+        exec("shutdown /s /t 0");
     }
 
     /**
