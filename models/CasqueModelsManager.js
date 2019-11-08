@@ -185,6 +185,20 @@ class CasqueModelsManager extends EventEmitter{
         }
     }
 
+    /**
+     * Eteint tous les casque branchés en ADB
+     */
+    shutDownAll() {
+        let me=this;
+        for(let i=0; i<me._casques.length; i++){
+            let c=me._casques[i];
+            if(c.plugged){
+                adb.shutDown(c.deviceId);
+            }
+
+        }
+    }
+
 
 
 

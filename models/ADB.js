@@ -67,6 +67,12 @@ class ADB extends EventEmitter{
             });
     }
 
+    /**
+     * Eface un fichier
+     * @param deviceId
+     * @param file
+     * @param cb
+     */
     deleteFile(deviceId,file,cb){
         this.shell(deviceId,"rm "+this.devicePath(file),cb);
     }
@@ -187,6 +193,14 @@ class ADB extends EventEmitter{
      */
     reboot(deviceId){
         this.client.reboot(deviceId);
+    }
+    /**
+     * Eteint le casque
+     * @param deviceId
+     * @param cb
+     */
+    shutDown(deviceId,cb){
+        this.shell(deviceId,"reboot -p",cb);
     }
 
     installAPKAndReboot(deviceId,apk,onSuccess,onError){

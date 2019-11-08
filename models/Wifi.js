@@ -10,8 +10,6 @@ class Wifi extends EventEmitter{
         let me = this;
         this._initSocket();
     }
-
-
     /**
      * initialise les sockets des casques
      * @private
@@ -21,7 +19,6 @@ class Wifi extends EventEmitter{
         http.listen(3000, function(){
             console.log('listening on *:3000');
         });
-
         io.on('connection', function(socket){
             let reg=/(.*)([0-9]{3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/gm;
             let ip=socket.handshake.address; //:::ffff:192.168.0.47
@@ -62,7 +59,6 @@ class Wifi extends EventEmitter{
                     casque.setSocket(json);
                 }
             });
-
             socket.on('disconnect', function(){
                 console.error("socket disconect");
                 let casque = casquesManager.getByIp(ip);
@@ -70,15 +66,8 @@ class Wifi extends EventEmitter{
                     casque.setOnline(false);
                 }
             });
-
-
         });
-
-
     }
-
-
-
     /**
      * Précharge une scéance sur le casque donné
      * @param {CasqueModel} casqueModel
@@ -108,7 +97,7 @@ class Wifi extends EventEmitter{
         let obj=new ToCasque();
         obj.ip = casqueModel.ip;
         obj.cmd = ToCasque.CMD_START_SESSION;
-        obj.msg = `demarre la seance sur le casque ${casqueModel.ip} connard`
+        obj.msg = `demarre la seance sur le casque ${casqueModel.ip}`
         console.log("demarre une seance sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
     }

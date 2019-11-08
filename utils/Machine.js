@@ -45,5 +45,13 @@ class Machine extends EventEmitter{
          */
         this.jsonCasquesConfigPath=this.appStoragePath+"/casques-config.json"
     }
+
+    /**
+     * Eteint la machine
+     */
+    shutDown(){
+        let exec = require('child_process').exec;
+        exec("shutdown /s");
+    }
 }
 module.exports = Machine;

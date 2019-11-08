@@ -24,6 +24,13 @@ ui.on(CMD.FULLSCREEN_TOGGLE,function(){
 ui.on(CMD.QUIT,function(){
     win.close();
 });
+//quitter le programme
+ui.on(CMD.SHUT_DOWN_ALL,function(){
+    casquesManager.shutDownAll();
+    setTimeout(function(){
+        machine.shutDown()
+    },1000);
+});
 //redemarrer le programme
 ui.on(CMD.REBOOT,function(){
     setTimeout(function(){
