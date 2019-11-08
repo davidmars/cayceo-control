@@ -1,16 +1,4 @@
-let started=false;
-/**
- * Quand la synchro a fait tout ce qu'elle avait à faire...
- */
-sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(err){
-    //va sur la home si on a pas démaré l'application
-    if(!started){
-        started=true;
-        setTimeout(function(){
-            ui.screens.home.show();
-        },5*1000);
-    }
-});
+
 /**
  * Quand le logo est pret à être affiché
  */

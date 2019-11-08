@@ -28,6 +28,11 @@ class Sync extends EventEmitter{
          * @type {boolean}
          */
         this.syncing=false;
+        /**
+         * Quand true c'est qu'on peut commencer à faire qque chose
+         * @type {boolean}
+         */
+        this.ready=false;
 
         /**
          * @private
@@ -98,6 +103,7 @@ class Sync extends EventEmitter{
                 me.emit(EVENT_OFFLINE);
             }
             me.syncing=false;
+            me.ready=true;
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
             me.emit(EVENT_READY);
         })
@@ -150,6 +156,7 @@ class Sync extends EventEmitter{
         }
 
         if(contenuOk && apkOk){
+            me.ready=true;
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
         }
     }
@@ -453,10 +460,12 @@ class Sync extends EventEmitter{
                 return;
             }
         }
+        me.ready=true;
+        me.syncing=false;
         me.emit(EVENT_WEB_SYNC_UPDATED);
         me.emit(EVENT_SYNC_READY_TO_DISPLAY);
         me.emit(EVENT_READY);
-        me.syncing=false;
+
 
     }
 

@@ -20,14 +20,16 @@ class Wifi extends EventEmitter{
         let me =this;
         http.close();
         http.on("error",function(e){
-            console.error(e);
-            ui.log(e,true);
+            console.error("socket error",e);
+            ui.log(["ipV4",machine.getIpAdresses(),true]);
+            ui.log(["socket error",e],true);
         });
         http.on('listening', function() {
             ui.log(["listenning socket on",http.address()]);
             me.listening=true;
+            me.emit(EVENT_READY);
         });
-        //http.listen(3000,"192.168.0.1", function(){});
+        //http.listen(3000,"192.168.0.2", function(){}); //écoute sur une seule ip
         http.listen(3000, function(){});
         io.on('connection', function(socket){
             let reg=/(.*)([0-9]{3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/gm;

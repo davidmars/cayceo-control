@@ -80,12 +80,50 @@ machine.on(EVENT_READY,function(){
     require("./listen-adb");
 
 
+    //toutes les minutes loggue les ips du pc
+
+    setInterval(function(){
+        ui.log(["ipV4",machine.getIpAdresses()]);
+    },1000*60);
+
+
+    let started=false;
+    let startOrNot=function(){
+        //va sur la home si on a pas démaré l'application
+        if(!sync.ready){
+            ui.log("Waiting for data sync",true);
+            return;
+        }
+        if(!wifi.listening ){
+            ui.log(["ipV4",machine.getIpAdresses()],true);
+            ui.log("Waiting for socket...",true);
+            return;
+        }
+        if(!started){
+            started=true;
+            setTimeout(function(){
+                ui.screens.home.show();
+            },5*1000);
+        }
+    };
+    //Quand la synchro a fait tout ce qu'elle avait à faire...
+    sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(err){
+        startOrNot();
+    });
+    //Quand le socket est prêt
+    wifi.on(EVENT_READY,function(err){
+        startOrNot();
+    });
+
+
+
 });
 
-ui.log(["ips de cette machine",machine.getIpAdresses()]);
-setInterval(function(){
-    ui.log(["ips de cette machine",machine.getIpAdresses()]);
-},1000*60);
+
+
+
+
+
 
 
 
