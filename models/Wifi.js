@@ -89,6 +89,9 @@ class Wifi extends EventEmitter{
         let obj=new ToCasque();
         obj.ip = casqueModel.ip;
         obj.contenuPath = contenuPath;
+        if(!minutes || isNaN(minutes)){
+            minutes=99;
+        }
         obj.sessionDuration = minutes*60;
         obj.cmd = ToCasque.CMD_LOAD_SESSION;
         obj.msg = `Vazy lance le contenu stp! ${contenuPath} pendant ${minutes} minutes `;
