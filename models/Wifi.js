@@ -8,17 +8,27 @@ class Wifi extends EventEmitter{
     constructor(){
         super();
         let me = this;
+        this.listening=false;
         this._initSocket();
+
     }
     /**
      * initialise les sockets des casques
      * @private
      */
     _initSocket(){
+        let me =this;
         http.close();
-        http.listen(3000, function(){
-            console.log('listening on *:3000');
+        http.on("error",function(e){
+            console.error(e);
+            ui.log(e,true);
         });
+        http.on('listening', function() {
+            ui.log(["listenning socket on",http.address()]);
+            me.listening=true;
+        });
+        //http.listen(3000,"192.168.0.1", function(){});
+        http.listen(3000, function(){});
         io.on('connection', function(socket){
             let reg=/(.*)([0-9]{3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3})/gm;
             let ip=socket.handshake.address; //:::ffff:192.168.0.47

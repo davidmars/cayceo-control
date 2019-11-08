@@ -82,6 +82,11 @@ machine.on(EVENT_READY,function(){
 
 });
 
+ui.log(["ips de cette machine",machine.getIpAdresses()]);
+setInterval(function(){
+    ui.log(["ips de cette machine",machine.getIpAdresses()]);
+},1000*60);
+
 
 
 
