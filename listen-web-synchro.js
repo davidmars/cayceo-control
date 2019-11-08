@@ -28,7 +28,9 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
         contenu.uid,
         contenu.name,
         contenu.localThumbNoResizeAbsolute,
-        contenu.localFile
+        contenu.localFile,
+        contenu.duration,
+        contenu.short
     ).setDetails(contenu);
 
     casquesManager.addContenu(contenu.localFile);
