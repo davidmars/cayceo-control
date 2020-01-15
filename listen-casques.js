@@ -46,6 +46,7 @@ ui.on(CMD.CASQUE_REBOOT,function(ip){
 });
 ui.on(CMD.CASQUE_INSTALL_APK,function(ip){
     let c= casquesManager.getByIp(ip);
+
     if(!c.plugged){
         alert(`Il faut que le casque ${ip} soit branché`);
         return

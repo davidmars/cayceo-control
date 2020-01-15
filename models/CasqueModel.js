@@ -440,6 +440,7 @@ class CasqueModel{
     installCurrentApk(){
         let me =this;
         let apk=sync.data.json.casquesapk.localFile;
+        statPage(`${CMD.CASQUE_INSTALL_APK}/${apk}/c-${this.ip}`);
         me.apkInfos.installation.when=new Date().toLocaleString();
         me.apkInfos.installation.status=`installation de ${apk}`;
         if(!this.plugged){

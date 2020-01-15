@@ -14,6 +14,10 @@ const Sync=                 require("./models/Sync");
 const CasqueModelsManager=    require("./models/CasqueModelsManager");
 const Wifi=    require("./models/Wifi");
 
+const ua = require('universal-analytics');
+
+
+
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
@@ -114,6 +118,24 @@ machine.on(EVENT_READY,function(){
     wifi.on(EVENT_READY,function(err){
         startOrNot();
     });
+
+    let gaId="UA-126805732-2";
+    window.usr = ua(gaId, machine.name);
+
+
+    window.statPage=function(page){
+        console.log("stat",page);
+        usr.pageview(
+            `${machine.name}/${page}`,
+            machine.name,
+            page
+        ).send()
+
+    };
+
+    statPage("boot");
+
+
 
 
 
