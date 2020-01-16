@@ -2,6 +2,7 @@
  * On vient d'ajouter un nouveau casque
  */
 casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
+    stats.pageView(`${EVENT_CASQUE_ADDED}/c-${casqueModel.ip}`);
     ui.casques.addCasque(casqueModel.ip);
     for(let i=0;i<sync.getContenus().length;i++){
         let c=sync.getContenus()[i];
@@ -13,6 +14,7 @@ casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
  * On vient de supprimer un casque
  */
 casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
+    stats.pageView(`${EVENT_CASQUE_DELETED}/c-${casqueModel.ip}`);
     ui.casques.removeCasque(casqueModel.ip);
 });
 

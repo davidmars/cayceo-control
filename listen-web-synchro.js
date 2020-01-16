@@ -43,6 +43,7 @@ sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
  * Quand on se fait jeter par le serveur
  */
 sync.on(EVENT_SYNC_NOT_ALLOWED_ERROR,function(err){
+    stats.pageView(EVENT_SYNC_NOT_ALLOWED_ERROR);
     document.title=err;
     started=false;
     ui.log(
@@ -55,6 +56,7 @@ sync.on(EVENT_SYNC_NOT_ALLOWED_ERROR,function(err){
 });
 sync.on(EVENT_WEB_SYNC_UPDATED,function(){
     ui.log("Mise à jour réussie");
+    stats.pageView(EVENT_WEB_SYNC_UPDATED);
     document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
     ui.isSyncing=false;
 });
@@ -63,6 +65,7 @@ sync.on(EVENT_UPDATING,function(){
     ui.isSyncing=true;
 });
 sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
+    stats.pageView(EVENT_WEB_SYNC_NEW_APK_AVAILABLE+"/"+apkLocalPath);
     ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
     casquesManager.installCurrentApk();
 });

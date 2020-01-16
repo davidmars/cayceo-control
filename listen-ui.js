@@ -22,12 +22,12 @@ ui.on(CMD.FULLSCREEN_TOGGLE,function(){
 });
 //quitter le programme
 ui.on(CMD.QUIT,function(){
-    statPage(CMD.QUIT);
+    stats.pageView(CMD.QUIT);
     win.close();
 });
 //quitter le programme
 ui.on(CMD.SHUT_DOWN_ALL,function(){
-    statPage(CMD.SHUT_DOWN_ALL);
+    stats.pageView(CMD.SHUT_DOWN_ALL);
     casquesManager.shutDownAll();
     setTimeout(function(){
         machine.shutDown()
@@ -35,14 +35,14 @@ ui.on(CMD.SHUT_DOWN_ALL,function(){
 });
 //redemarrer le programme
 ui.on(CMD.REBOOT,function(){
-    statPage(CMD.REBOOT);
+    stats.pageView(CMD.REBOOT);
     setTimeout(function(){
         app.relaunch();
         app.exit(0);
     },1000*1);
 });
 ui.on(CMD.INSTALL_AND_REBOOT,function(){
-    statPage(CMD.INSTALL_AND_REBOOT);
+    stats.pageView(CMD.INSTALL_AND_REBOOT);
     setTimeout(function(){
         ipcRenderer.send('INSTALL_AND_REBOOT', {});
     },1000*1);
@@ -50,7 +50,7 @@ ui.on(CMD.INSTALL_AND_REBOOT,function(){
 
 //Efface tout les fichiers locaux et redémare l'application
 ui.on(CMD.RESET_ALL,function(){
-    statPage(CMD.RESET_ALL);
+    stats.pageView(CMD.RESET_ALL);
     FileSystemUtils.removeDir(machine.appStoragePath,function(){
         setTimeout(function(){
             app.relaunch();
@@ -86,7 +86,7 @@ ui.on(CMD.NEW_SEANCE,function(seance){
             contenu.localFile,
             seance.duree
         );
-        statPage(`${CMD.NEW_SEANCE}/${contenu.name}/c-${casq.ip}`);
+        stats.pageView(`${CMD.NEW_SEANCE}/${contenu.name}/c-${casq.ip}`);
     }
 
     /**

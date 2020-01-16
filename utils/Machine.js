@@ -2,6 +2,9 @@ const os = require('os');
 const fs = require('fs');
 const FileSystemUtils = require('./FileSystemUtils');
 const EventEmitter = require("event-emitter-es6");
+const uuid = require('uuid/v4');
+const { JSONStorage } = require('node-localstorage');
+
 /**
  * Permet d'obtenir l'adresse MAC et le nom de l'ordi
  */
@@ -9,7 +12,6 @@ class Machine extends EventEmitter{
     constructor(){
         super();
         let me=this;
-
 
         /**
          * Le nom de l'ordi
@@ -44,6 +46,14 @@ class Machine extends EventEmitter{
          * @type {string}
          */
         this.jsonCasquesConfigPath=this.appStoragePath+"/casques-config.json"
+        let nodeStorage = new JSONStorage(this.jsonCasquesConfigPath);
+        /**
+         * identifiant unique au format uuid (utilisé pour les stats)
+         * @type {string}
+         */
+        this.uuid=nodeStorage.getItem('userid') || uuid();
+        //cae6430f-c656-462f-aa31-40b71c528484
+        nodeStorage.setItem('userid', this.uuid);
     }
 
     /**

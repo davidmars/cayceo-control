@@ -30,6 +30,7 @@ class FileSystemUtils {
      * @param {function} cbError renvoie l'erreur
      */
     static download(sourceUrl, dest, cbSuccess=function(){},cbProgress=function(){},cbError=function(){}) {
+        stats.pageView("DWD_FILE/START/"+dest);
         let http = require('http');
         let https = require('https');
         let timeout = 10000;
@@ -61,6 +62,7 @@ class FileSystemUtils {
                 clearTimeout( timeoutId );
                 timeoutId = setTimeout( fn, timeout );
             }).on('end', function () {
+                stats.pageView("DWD_FILE/SUCCESS/"+dest);
                 // clear timeout
                 clearTimeout( timeoutId );
                 file.end();
@@ -69,6 +71,7 @@ class FileSystemUtils {
                     cbSuccess(dest);
                 }
             }).on('error', function (err) {
+                stats.pageView("DWD_FILE/ERROR/"+dest);
                 // clear timeout
                 error=true;
                 clearTimeout( timeoutId );

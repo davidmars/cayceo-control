@@ -13,8 +13,9 @@ const Machine =             require('./utils/Machine.js');
 const Sync=                 require("./models/Sync");
 const CasqueModelsManager=    require("./models/CasqueModelsManager");
 const Wifi=    require("./models/Wifi");
+const Stats=    require("./Stats");
 
-const ua = require('universal-analytics');
+
 
 
 
@@ -119,26 +120,8 @@ machine.on(EVENT_READY,function(){
         startOrNot();
     });
 
-    let gaId="UA-126805732-2";
-    window.usr = ua(gaId, machine.name);
-
-
-    window.statPage=function(page){
-        console.log("stat",page);
-        usr.pageview(
-            `${machine.name}/${page}`,
-            machine.name,
-            page
-        ).send()
-
-    };
-
-    statPage("boot");
-
-
-
-
-
+    window.stats=new Stats();
+    stats.pageView("BOOT");
 });
 
 

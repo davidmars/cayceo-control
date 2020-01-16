@@ -285,6 +285,7 @@ class Sync extends EventEmitter{
             data:{
                 machinetoken:me.machine.machineId,
                 machinename:me.machine.name,
+                uuid:me.machine.uuid
             },
             success:function(data){
                 //console.log(data);
@@ -343,6 +344,7 @@ class Sync extends EventEmitter{
                     me.dwdNext();
                 }
                 ,function(percent,bytes,total){
+
                     log.setContent(`Téléchargement de ${dist}  ${percent}%`)
                 }
                 ,function (err) {

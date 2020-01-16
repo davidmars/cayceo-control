@@ -1,6 +1,6 @@
 {
   "name": "cayceo-control",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
@@ -28,9 +28,11 @@
     "electron-updater": "^4.2.0",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
+    "node-localstorage": "^2.1.5",
     "rimraf": "^3.0.0",
     "socket.io": "^2.2.0",
-    "universal-analytics": "^0.4.20"
+    "universal-analytics": "^0.4.20",
+    "uuid": "^3.3.3"
   },
   "build": {
     "appId": "com.github.davidmars.cayceo-control",
