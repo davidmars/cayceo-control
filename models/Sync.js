@@ -75,7 +75,6 @@ class Sync extends EventEmitter{
          * @type {string}
          */
         this.jsonPath=machine.appStoragePath+"/sync.json";
-
         //teste si le json existe
         if (fs.existsSync(this.jsonPath)) {
             let json = fs.readFileSync(me.jsonPath);
@@ -90,9 +89,7 @@ class Sync extends EventEmitter{
         }
         me.doIt();
         //mise à jour programmée
-        setInterval(function(){
-            me.doIt();
-        },1000*window.conf.synchroDelaySeconds);
+        me._recursiveSynchro();
 
         //en cas d'erreur réseau
         // dit qu'on est offline
@@ -106,9 +103,41 @@ class Sync extends EventEmitter{
             me.ready=true;
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
             me.emit(EVENT_READY);
-        })
+        });
     }
 
+    _recursiveSynchro(){
+        let me=this;
+        if(me._intervalSynchro){
+            clearInterval(me._intervalSynchro);
+        }
+        this.doIt();
+        let delay=me._synchroDelay();
+        console.log("next sync in "+delay);
+        me._intervalSynchro=setInterval(function(){
+           me._recursiveSynchro();
+        },delay*1000);
+    }
+
+    /**
+     * Calcule le delay entre deux mise à jour
+     * @returns {number} secondes (si une erreur devait arriver le temps serait 60)
+     * @private
+     */
+    _synchroDelay(){
+        let sec;
+        if(this.data && this.data.json){
+            sec=this.data.json.refreshSeconds;
+        }
+        if(!sec){
+            sec=61;
+        }
+        if(isNaN(sec)){
+            sec=62;
+        }
+        return sec;
+
+    }
     /**
      * Applique les chemins locaux absoluts aux urls
      * Applique les variables
@@ -118,7 +147,8 @@ class Sync extends EventEmitter{
         let me=this;
         let apkOk=false;
         let contenuOk=false;
-
+        //refresh
+        me._recursiveSynchro();
         //logo
         let logo=me.data.json.logomachine;
         logo.localPathAboslute=this.localStoragePath+"/"+ logo.localFile;
