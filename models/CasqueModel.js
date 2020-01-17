@@ -440,7 +440,7 @@ class CasqueModel{
     installCurrentApk(){
         let me =this;
         let apk=sync.data.json.casquesapk.localFile;
-        stats.pageView(`${CMD.CASQUE_INSTALL_APK}/${apk}/c-${this.ip}`);
+
         me.apkInfos.installation.when=new Date().toLocaleString();
         me.apkInfos.installation.status=`installation de ${apk}`;
         if(!this.plugged){
@@ -452,11 +452,13 @@ class CasqueModel{
             return;
         }
         me.apkInfos.installation.installing=true;
+        stats.pageView(`${CMD.CASQUE_INSTALL_APK}/START/${apk}/c-${me.ip}`);
         adb.installAPKAndReboot(
             me.deviceId,
             apk,
             function(){
                 //enregistre la derniere version de l'APK pour le prochain boot de l'app
+                stats.pageView(`${CMD.CASQUE_INSTALL_APK}/SUCCESS/${apk}/c-${me.ip}`);
                 me.apkInfos.lastApk=sync.data.json.casquesapk.serverFile;
                 casquesManager._saveJson();
                 me.apkInfos.installation.when=new Date().toLocaleString();
@@ -466,6 +468,7 @@ class CasqueModel{
 
             },
             function(err){
+                stats.pageView(`${CMD.CASQUE_INSTALL_APK}/ERROR/${apk}/c-${me.ip}`);
                 me.apkInfos.installation.when=new Date().toLocaleString();
                 me.apkInfos.installation.status=err;
                 me.apkInfos.installation.installing=false;
