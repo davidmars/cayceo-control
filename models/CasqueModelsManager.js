@@ -1,7 +1,7 @@
 const EventEmitter = require("event-emitter-es6");
 const CasqueModel = require("./CasqueModel");
 const CasqueJsonStored = require("./casqueExtensions/CasqueJsonStored");
-const fs = require("fs");
+const JsonStored = require("../utils/JsonStored");
 
 class CasqueModelsManager extends EventEmitter{
     constructor(machine){
@@ -13,26 +13,15 @@ class CasqueModelsManager extends EventEmitter{
          */
         this._casques=[];
         /**
+         * Le json local des casques
+         * @type {JsonStored}
+         */
+        this.jsonStored=new JsonStored("casques");
+        /**
          *
          * @type {CasqueJsonStored[]}
          */
-        let casquesFromJson=[];
-        /**
-         * @private
-         * Chemin vers le fichier en local où on enregistrera les ralations entre numéros et deviceId
-         * @type {string}
-         */
-        this.jsonPath=machine.appStoragePath+"/casques.json";
-        //teste si le json existe
-        if (fs.existsSync(this.jsonPath)) {
-            //lis le json
-            let json = fs.readFileSync(me.jsonPath);
-            json = JSON.parse(json);
-            casquesFromJson = json;
-        } else {
-            //le sauvegarde pour la première fois
-            this._saveJson();
-        }
+        let casquesFromJson=this.jsonStored.getJson(this._getCasquesJson());
         for(let i=0; i<casquesFromJson.length; i++){
             this._casques[i]=new CasqueModel();
             this._casques[i].deviceId=casquesFromJson[i].deviceId;
@@ -46,10 +35,11 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
-     * Enregistre les associations deviceId / ip pour une future utilisation
+     * Renvoie un json avec les infos des casques qui vont bien
+     * @returns {CasqueJsonStored[]}
      * @private
      */
-    _saveJson(){
+    _getCasquesJson(){
         let casquesJson=[];
         for(let i=0; i<this._casques.length; i++){
             let casqueData=new CasqueJsonStored();
@@ -58,7 +48,14 @@ class CasqueModelsManager extends EventEmitter{
             casqueData.lastApk=this._casques[i].apkInfos.lastApk;
             casquesJson.push(casqueData);
         }
-        fs.writeFileSync(this.jsonPath,JSON.stringify(casquesJson,null,2),{ encoding : 'utf8'});
+        return casquesJson;
+    }
+    /**
+     * Enregistre les associations deviceId / ip pour une future utilisation
+     * @private
+     */
+    _saveJson(){
+        this.jsonStored.saveJson(this._getCasquesJson());
     }
 
     /**

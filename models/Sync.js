@@ -1,6 +1,7 @@
 const FileSystemUtils=require("../utils/FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
+const JsonStored = require("../utils/JsonStored");
 
 
 /**
@@ -69,25 +70,8 @@ class Sync extends EventEmitter{
          */
         this.files=[];
 
-        /**
-         * @private
-         * Chemin vers le fichier en local
-         * @type {string}
-         */
-        this.jsonPath=machine.appStoragePath+"/sync.json";
-        //teste si le json existe
-        if (fs.existsSync(this.jsonPath)) {
-            let json = fs.readFileSync(me.jsonPath);
-            json = JSON.parse(json);
-            me.data = json;
-            me._applyLocalAndCheckReady();
-            me.synchroId = me.data.json.synchroId;
-            ui.log("la version du contenu est " + this.synchroId);
-        } else {
-            ui.log("sync.json va être téléchargé pour la première fois...");
-            ui.popIns.webApiData.displayData("pas encore téléchargé...");
-        }
-        me.doIt();
+        this.syncJson=new JsonStored("sync");
+        me.data=this.syncJson.getJson(me.data);
         //mise à jour programmée
         me._recursiveSynchro();
 
@@ -106,6 +90,10 @@ class Sync extends EventEmitter{
         });
     }
 
+    /**
+     * Met à jour les contenus en boucle à intervale régulier
+     * @private
+     */
     _recursiveSynchro(){
         let me=this;
         if(me._intervalSynchro){
@@ -251,7 +239,8 @@ class Sync extends EventEmitter{
      */
     setNewJson(json){
         let oldJson=this.data;
-        fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
+        this.syncJson.saveJson(json);
+        //fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
         this.synchroId=json.json.synchroId;
         this.data=json;
         this._applyLocalAndCheckReady();

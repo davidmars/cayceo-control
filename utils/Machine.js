@@ -3,7 +3,7 @@ const fs = require('fs');
 const FileSystemUtils = require('./FileSystemUtils');
 const EventEmitter = require("event-emitter-es6");
 const uuid = require('uuid/v4');
-const { JSONStorage } = require('node-localstorage');
+const JsonStored=require("./JsonStored");
 
 /**
  * Permet d'obtenir l'adresse MAC et le nom de l'ordi
@@ -41,19 +41,14 @@ class Machine extends EventEmitter{
         if (!fs.existsSync(me.appStoragePath)) {
             FileSystemUtils.ensureDirectoryExistence(me.appStoragePath+"/test.txt");
         }
-        /**
-         * Chemin vers le fichier de config des casques
-         * @type {string}
-         */
-        this.jsonCasquesConfigPath=this.appStoragePath+"/casques-config.json"
-        let nodeStorage = new JSONStorage(this.jsonCasquesConfigPath);
+
+        JsonStored.init(this.appStoragePath);
+        let uuidStorage=new JsonStored("uuid");
         /**
          * identifiant unique au format uuid (utilisé pour les stats)
          * @type {string}
          */
-        this.uuid=nodeStorage.getItem('userid') || uuid();
-        //cae6430f-c656-462f-aa31-40b71c528484
-        nodeStorage.setItem('userid', this.uuid);
+        this.uuid=uuidStorage.getJson(uuid()); //cae6430f-c656-462f-aa31-40b71c528484
     }
 
     /**
