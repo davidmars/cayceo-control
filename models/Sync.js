@@ -99,16 +99,17 @@ class Sync extends EventEmitter{
         if(me._intervalSynchro){
             clearInterval(me._intervalSynchro);
         }
-        this.doIt();
         let delay=me._synchroDelay();
         console.log("next sync in "+delay);
         me._intervalSynchro=setInterval(function(){
-           me._recursiveSynchro();
+            me._recursiveSynchro();
         },delay*1000);
+        //fait le truc
+        this.doIt();
     }
 
     /**
-     * Calcule le delay entre deux mise à jour
+     * Calcule le delay entre deux mises à jour
      * @returns {number} secondes (si une erreur devait arriver le temps serait 60)
      * @private
      */
@@ -117,12 +118,8 @@ class Sync extends EventEmitter{
         if(this.data && this.data.json){
             sec=this.data.json.refreshSeconds;
         }
-        if(!sec){
-            sec=61;
-        }
-        if(isNaN(sec)){
-            sec=62;
-        }
+        sec=!sec?61:sec;
+        sec=isNaN(sec)?62:sec;
         return sec;
 
     }
