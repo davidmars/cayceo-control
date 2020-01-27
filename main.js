@@ -67,10 +67,15 @@ function checkUpdate(delaySeconds=60){
 ipcMain.on('INSTALL_AND_REBOOT', (event, arg) => {
   autoUpdater.quitAndInstall();
 });
+// Fonction reçue de de la sync web pour autoriser ou non l'installation de pre-releases
+ipcMain.on('ALLOW_PRE_RELEASE', (event, allow) => {
+  autoUpdater.allowPrerelease=allow;
+});
 //envoie un message à renderer
 function sendStatusToWindow(text,channel="MAJ") {
   mainWindow.webContents.send(channel, text);
 }
+
 autoUpdater.on('checking-for-update', () => {
   //sendStatusToWindow('Recherche de nouvelle version');
   sendStatusToWindow('');

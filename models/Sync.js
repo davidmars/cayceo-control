@@ -2,6 +2,7 @@ const FileSystemUtils=require("../utils/FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
 const JsonStored = require("../utils/JsonStored");
+const { ipcRenderer } = require('electron');
 
 
 /**
@@ -240,6 +241,15 @@ class Sync extends EventEmitter{
         //fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
         this.synchroId=json.json.synchroId;
         this.data=json;
+
+        if(this.data.json.jukebox.istestmachine===true){
+            console.warn("ALLOW_PRE_RELEASE");
+            ipcRenderer.send('ALLOW_PRE_RELEASE',true)
+        }else{
+            console.warn("DISALLOW_PRE_RELEASE");
+            ipcRenderer.send('ALLOW_PRE_RELEASE',false)
+        }
+
         this._applyLocalAndCheckReady();
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
         ui.popIns.webApiData.displayData(json);
