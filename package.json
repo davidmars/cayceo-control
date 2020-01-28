@@ -1,6 +1,6 @@
 {
   "name": "cayceo-control",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {

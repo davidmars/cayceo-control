@@ -21,7 +21,9 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
         contenu.short
     ).setDetails(contenu);
 
-    casquesManager.addContenu(contenu.localFile);
+    if(!contenu.disabled){
+        casquesManager.addContenu(contenu.localFile);
+    }
 
 });
 /**
@@ -59,6 +61,7 @@ sync.on(EVENT_WEB_SYNC_UPDATED,function(){
     stats.pageView(EVENT_WEB_SYNC_UPDATED);
     document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
     ui.isSyncing=false;
+    sync.disableEnableContenus();
 });
 sync.on(EVENT_UPDATING,function(){
     document.title="Mise à jour en cours...";

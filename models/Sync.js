@@ -154,7 +154,9 @@ class Sync extends EventEmitter{
         me.files=[];
         for(let i=0;i<this.getContenus().length;i++){
             let c=this.getContenus()[i];
-            me.files.push(c.localFile);
+            if(!c.disabled){
+                me.files.push(c.localFile);
+            }
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
             c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
             c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
@@ -174,6 +176,29 @@ class Sync extends EventEmitter{
         if(contenuOk && apkOk){
             me.ready=true;
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
+        }
+    }
+
+    /**
+     * Affiche ou masque les contenus dans l'ui
+     */
+    disableEnableContenus(){
+        //masque / affiche les contenus disabled
+        for(let contenu of this.getContenus()){
+            let f=ui.films.getFilmById(contenu.uid);
+            if(f){
+                if(contenu.disabled){
+                    f.$main.css("display","none"); //todo passer par une commande
+                    console.warn("efface",contenu.localFile)
+                    casquesManager.removeContenu(contenu.localFile);
+                }else{
+                    f.$main.css("display","");
+                }
+
+            }else{
+                console.log("nuuuul",f);
+            }
+
         }
     }
 
@@ -233,14 +258,13 @@ class Sync extends EventEmitter{
     /**
      * Définit un nouveau json et donc nouvelles data et nouvelle version.
      * @private
-     * @param json
+     * @param newJson
      */
-    setNewJson(json){
+    setNewJson(newJson){
         let oldJson=this.data;
-        this.syncJson.saveJson(json);
-        //fs.writeFileSync(this.jsonPath,JSON.stringify(json,null,2),{ encoding : 'utf8'});
-        this.synchroId=json.json.synchroId;
-        this.data=json;
+        this.syncJson.saveJson(newJson);
+        this.synchroId=newJson.json.synchroId;
+        this.data=newJson;
 
         if(this.data.json.jukebox.istestmachine===true){
             console.warn("ALLOW_PRE_RELEASE");
@@ -250,9 +274,11 @@ class Sync extends EventEmitter{
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
 
+
+
         this._applyLocalAndCheckReady();
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
-        ui.popIns.webApiData.displayData(json);
+        ui.popIns.webApiData.displayData(newJson);
 
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
         if(oldJson && oldJson.json && oldJson.json.contenus){
@@ -262,8 +288,8 @@ class Sync extends EventEmitter{
             for(i = 0;i<oldJson.json.contenus.length;i++){
                 oldUids.push(oldJson.json.contenus[i].uid);
             }
-            for(i = 0;i<json.json.contenus.length;i++){
-                newUids.push(json.json.contenus[i].uid);
+            for(i = 0;i<newJson.json.contenus.length;i++){
+                newUids.push(newJson.json.contenus[i].uid);
             }
             //recherche les contenus supprimés
             for(i=0;i<oldUids.length;i++){
@@ -275,9 +301,13 @@ class Sync extends EventEmitter{
             }
 
 
+
         }
 
+
+
     }
+
 
     /**
      * Renvoie les données d'un contenu à partir de son uid
