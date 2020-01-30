@@ -189,18 +189,12 @@ class Sync extends EventEmitter{
         for(let contenu of this.getContenus()){
             let f=ui.films.getFilmById(contenu.uid);
             if(f){
+                f.disabled=contenu.disabled;
                 if(contenu.disabled){
-                    f.$main.css("display","none"); //todo passer par une commande
-                    console.warn("efface",contenu.localFile)
+                    //efface le contenu des casques
                     casquesManager.removeContenu(contenu.localFile);
-                }else{
-                    f.$main.css("display","");
                 }
-
-            }else{
-                console.log("nuuuul",f);
             }
-
         }
     }
 

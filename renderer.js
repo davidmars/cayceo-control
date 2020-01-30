@@ -113,13 +113,15 @@ machine.on(EVENT_READY,function(){
     };
     //Quand la synchro a fait tout ce qu'elle avait à faire...
     sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(err){
+        if(sync.data.json.jukebox.name){
+            this.ui.layout.setMachineName(sync.data.json.jukebox.name);
+        }
         startOrNot();
     });
     //Quand le socket est prêt
     wifi.on(EVENT_READY,function(err){
         startOrNot();
     });
-
     window.stats=new Stats();
     stats.pageView("BOOT");
 });
