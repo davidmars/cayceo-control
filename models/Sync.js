@@ -73,6 +73,8 @@ class Sync extends EventEmitter{
 
         this.syncJson=new JsonStored("sync");
         me.data=this.syncJson.getJson(me.data);
+        console.log("initial data",me.data);
+        me.setNewJson(me.data);
         //mise à jour programmée
         me._recursiveSynchro();
 
