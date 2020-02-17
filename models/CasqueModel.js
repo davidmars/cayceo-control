@@ -403,7 +403,12 @@ class CasqueModel{
 
             //lecture de contenu
             if(me.nowPlaying.contenuPath){
-                casqueUi.setContenuPath(me.nowPlaying.contenuPath);
+                if(!ui.films.getFilmByFilePath(me.nowPlaying.contenuPath)){
+                    console.warn("contenu en cours de lecture qui n'est plus dans l'app");
+                    wifi.stopSeance(this);
+                }else{
+                    casqueUi.setContenuPath(me.nowPlaying.contenuPath);
+                }
             }else{
                 casqueUi.setContenu(null);
             }
