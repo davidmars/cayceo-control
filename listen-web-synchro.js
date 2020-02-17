@@ -12,7 +12,7 @@ sync.on(EVENT_WEB_SYNC_LOGO_READY,function(logoUrl){
 sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
 
     //Affiche le contenu
-    ui.films.addFilm(
+    let f=ui.films.addFilm(
         contenu.uid,
         contenu.name,
         contenu.localThumbNoResizeAbsolute,
@@ -20,6 +20,13 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
         contenu.duration,
         contenu.short
     ).setDetails(contenu);
+
+    if(sync.data.json.jukebox.usetags){
+        for(let cat of contenu.categories){
+            f.addCategory(cat);
+        }
+    }
+
 
     if(!contenu.disabled){
         casquesManager.addContenu(contenu.localFile);
@@ -62,6 +69,7 @@ sync.on(EVENT_WEB_SYNC_UPDATED,function(){
     document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
     ui.isSyncing=false;
     sync.disableEnableContenus();
+    ui.categoriesEnabled=sync.data.json.jukebox.usetags;
 });
 sync.on(EVENT_UPDATING,function(){
     document.title="Mise à jour en cours...";

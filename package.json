@@ -1,6 +1,6 @@
 {
   "name": "cayceo-control",
-  "version": "0.3.12",
+  "version": "0.4.0",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
@@ -24,12 +24,12 @@
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.7.1",
-    "electron-updater": "^4.2.1",
+    "cayceo-ui": "^1.8.2",
+    "electron-updater": "^4.2.2",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
     "node-localstorage": "^2.1.5",
-    "rimraf": "^3.0.1",
+    "rimraf": "^3.0.2",
     "socket.io": "^2.2.0",
     "universal-analytics": "^0.4.20",
     "uuid": "^3.4.0"
