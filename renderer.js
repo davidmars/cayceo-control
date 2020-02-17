@@ -71,13 +71,13 @@ machine.on(EVENT_READY,function(){
     //Traite les actions demandées par l'utilisateur
     require("./listen-ui.js");
 
-    //casques
-    window.casquesManager=new CasqueModelsManager(machine);
-    require("./listen-casques");
-
     //synchro web
     window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
     require("./listen-web-synchro");
+
+    //casques
+    window.casquesManager=new CasqueModelsManager(machine);
+    require("./listen-casques");
 
     window.wifi=new Wifi();
 
@@ -105,6 +105,15 @@ machine.on(EVENT_READY,function(){
             return;
         }
         if(!started){
+            let machineName=machine.name;
+            if(sync.data.json && sync.data.json.jukebox && sync.data.json.jukebox.name){
+                machineName= sync.data.json.jukebox.name;
+            }
+            window.stats=new Stats(
+                "UA-126805732-2",
+                machineName
+            );
+            stats.pageView("BOOT");
             started=true;
             setTimeout(function(){
                 ui.screens.home.show();
@@ -122,8 +131,7 @@ machine.on(EVENT_READY,function(){
     wifi.on(EVENT_READY,function(err){
         startOrNot();
     });
-    window.stats=new Stats();
-    stats.pageView("BOOT");
+
 });
 
 

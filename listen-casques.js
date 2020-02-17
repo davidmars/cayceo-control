@@ -2,7 +2,9 @@
  * On vient d'ajouter un nouveau casque
  */
 casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
-    stats.pageView(`${EVENT_CASQUE_ADDED}/c-${casqueModel.ip}`);
+    if(typeof stats !== "undefined"){
+        stats.pageView(`${EVENT_CASQUE_ADDED}/c-${casqueModel.ip}`);
+    }
     ui.casques.addCasque(casqueModel.ip);
     for(let i=0;i<sync.getContenus().length;i++){
         let c=sync.getContenus()[i];
