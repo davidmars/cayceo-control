@@ -94,6 +94,10 @@ machine.on(EVENT_READY,function(){
 
     let started=false;
     let startOrNot=function(){
+        window.stats=new Stats(
+            "UA-126805732-2",
+            machine.name
+        );
         //va sur la home si on a pas démaré l'application
         if(!sync.ready){
             ui.log("Waiting for data sync",true);
@@ -104,6 +108,7 @@ machine.on(EVENT_READY,function(){
             ui.log("Waiting for socket...",true);
             return;
         }
+
         if(!started){
             let machineName=machine.name;
             if(sync.data.json && sync.data.json.jukebox && sync.data.json.jukebox.name){

@@ -258,6 +258,10 @@ class Sync extends EventEmitter{
      */
     setNewJson(newJson){
         let oldJson=this.data;
+        if(!newJson.json){
+            console.error("pas de json");
+            return;
+        }
         this.syncJson.saveJson(newJson);
         this.synchroId=newJson.json.synchroId;
         this.data=newJson;
@@ -269,8 +273,6 @@ class Sync extends EventEmitter{
             console.warn("DISALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
-
-
 
         this._applyLocalAndCheckReady();
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
