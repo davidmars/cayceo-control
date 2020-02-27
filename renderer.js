@@ -52,6 +52,13 @@ machine.on(EVENT_READY,function(){
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
+
+    //préinitialise les stats
+    window.stats=new Stats(
+        "UA-126805732-2",
+        machine.name
+    );
+
     ui.displaySplashScreen("Hello");
     //app versions
     //affiche la version de l'application
@@ -94,10 +101,7 @@ machine.on(EVENT_READY,function(){
 
     let started=false;
     let startOrNot=function(){
-        window.stats=new Stats(
-            "UA-126805732-2",
-            machine.name
-        );
+
         //va sur la home si on a pas démaré l'application
         if(!sync.ready){
             ui.log("Waiting for data sync",true);
@@ -114,10 +118,7 @@ machine.on(EVENT_READY,function(){
             if(sync.data.json && sync.data.json.jukebox && sync.data.json.jukebox.name){
                 machineName= sync.data.json.jukebox.name;
             }
-            window.stats=new Stats(
-                "UA-126805732-2",
-                machineName
-            );
+            window.stats.machineName=machineName;
             stats.pageView("BOOT");
             started=true;
             setTimeout(function(){
@@ -127,8 +128,12 @@ machine.on(EVENT_READY,function(){
     };
     //Quand la synchro a fait tout ce qu'elle avait à faire...
     sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(err){
-        if(sync.data.json.jukebox.name){
-            this.ui.layout.setMachineName(sync.data.json.jukebox.name);
+
+        if(sync.data.json.jukebox){
+            this.ui.categoriesEnabled=sync.data.json.jukebox.usetags; //active ou pas les catégories
+            if(sync.data.json.jukebox.name){
+                this.ui.layout.setMachineName(sync.data.json.jukebox.name);
+            }
         }
         startOrNot();
     });
