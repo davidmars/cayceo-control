@@ -1,8 +1,10 @@
+const electron = require('electron');
+const { ipcRenderer } = require('electron');
 const FileSystemUtils=require("../utils/FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
 const JsonStored = require("../utils/JsonStored");
-const { ipcRenderer } = require('electron');
+
 
 
 /**
@@ -339,7 +341,8 @@ class Sync extends EventEmitter{
             data:{
                 machinetoken:me.machine.machineId,
                 machinename:me.machine.name,
-                uuid:me.machine.uuid
+                uuid:me.machine.uuid,
+                exeversion:electron.remote.app.getVersion()
             },
             success:function(data){
                 //console.log(data);
