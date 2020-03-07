@@ -3,11 +3,21 @@ var https = require('https');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
+var glob = require("glob");
 
 /**
  * Methodes utilitaires pour le système de fichier
  */
 class FileSystemUtils {
+    /**
+     * Revoie la liste récursive des fichiers dans le répertoire donné
+     * @param dir
+     * @returns {*}
+     */
+    static getFilesRecursive(dir){
+        return glob.sync(dir+"/**/*",{"nodir":true});
+    }
+
     /**
      * S'assure que le répertoire d'un fichier donné existe et le crée le cas échéant
      * @param filePath
