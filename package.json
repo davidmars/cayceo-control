@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.8.5",
+    "cayceo-ui": "file:../cayceo-ui",
     "electron-updater": "^4.2.2",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
