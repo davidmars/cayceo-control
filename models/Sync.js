@@ -103,7 +103,7 @@ class Sync extends EventEmitter{
             clearInterval(me._intervalSynchro);
         }
         let delay=me._synchroDelay();
-        console.log("next sync in "+delay);
+        //console.log("next sync in "+delay);
         me._intervalSynchro=setInterval(function(){
             me._recursiveSynchro();
         },delay*1000);
@@ -269,10 +269,10 @@ class Sync extends EventEmitter{
         this.data=newJson;
 
         if(this.data.json.jukebox.istestmachine===true){
-            console.warn("ALLOW_PRE_RELEASE");
+            //console.warn("ALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',true)
         }else{
-            console.warn("DISALLOW_PRE_RELEASE");
+            //console.warn("DISALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
 
@@ -318,7 +318,7 @@ class Sync extends EventEmitter{
             for(i=0;i<oldUids.length;i++){
                 if($.inArray(oldUids[i],newUids) === -1){
                     let contenu=this.getContenuByUid(oldUids[i],oldJson.json.contenus);
-                    console.warn("contenu supprimé",contenu);
+                    //console.warn("contenu supprimé",contenu);
                     ui.devicesTable.getDeviceFile("régie",contenu.localFile).shouldExists=-1;
                     this.emit(window.EVENT_WEB_SYNC_CONTENU_DELETED,contenu);
                 }
@@ -582,13 +582,11 @@ class Sync extends EventEmitter{
         for(let path in ui.devicesTable.filesHeadCells){
             for(let casque of casquesManager.casquesList()){
                 if(casque.plugged){
-                    console.log("testFilesExistCasques",casque.deviceId,path);
+                    //console.log("testFilesExistCasques",casque.deviceId,path);
                     adb.contenuExists(casque.deviceId,path,function(exists){
                         if(exists){
-                            console.log(path +" existe :)")
                             ui.devicesTable.getDeviceFile(casque.ip,path).exists=1;
                         }else{
-                            console.log(path+" existe pas :(");
                             let df=ui.devicesTable.getDeviceFile(casque.ip,path,true)
                             if(df){
                                 df.exists=-1;
@@ -608,7 +606,6 @@ class Sync extends EventEmitter{
         //si une opération est en cours (copie ou effaçage) on renvoie rien
         for(let device of ui.devicesTable.devicesArray()){
             if(device.isDoingSomething()){
-                console.log(device.id+" est occupé")
                return null;
             }
         }
@@ -626,9 +623,6 @@ class Sync extends EventEmitter{
                         return fc;
                     }
                 }
-                console.log(device.id+" n'a rien à faire")
-            }else{
-                console.log(device.id+" n'est pas utilisable")
             }
         }
         return null;
@@ -654,12 +648,13 @@ class Sync extends EventEmitter{
                         fileCell.doing=0;
                         fileCell.exists=-1;
                         wifi.askFileList(casque);
+                        me.todoNext();
                     });
                     break;
 
                 case 1:
                     fileCell.doing=1;
-                    adb.pushContenu(
+                    adb.pushContenu2(
                         casque.deviceId,
                         fileCell.path,
                         function () {
@@ -667,10 +662,12 @@ class Sync extends EventEmitter{
                             fileCell.exists=1;
                             fileCell.copyPercent=100;
                             wifi.askFileList(casque);
+                            me.todoNext();
                         },
                         function (percent) {
                             fileCell.copyPercent=percent;
-                        }, function () {
+                        }, function (error) {
+                            console.error("error adb push2",error)
                             fileCell.doing=-2;
                             wifi.askFileList(casque);
                         }
@@ -687,6 +684,7 @@ class Sync extends EventEmitter{
                             fileCell.doing=0;
                             fileCell.exists=-1;
                             ui.log(["Contenu supprimé de la régie",fileCell.path]);
+                            me.todoNext();
                         },
                         function(){
                             fileCell.doing=-2;
@@ -717,6 +715,7 @@ class Sync extends EventEmitter{
                                 fileCell.doing=0;
                                 setTimeout(function(){
                                     ui.layout.setContenuUpdate(null);
+                                    me.todoNext();
                                 },3000);
                                 log.setContent(`Téléchargement vers ${file} terminé :)`);
                             }
@@ -750,31 +749,32 @@ class Sync extends EventEmitter{
 
         //un premier listing des fichiers
         if(!ui.devicesTable.isDoingSomething()){
-            console.log("liste les fichiers physiques")
             me.testFilesExistsRegie();
             me.testFilesExistCasques();
         }
         setInterval(function(){
             if(!ui.devicesTable.isDoingSomething()){
-                console.log("liste les fichiers physiques")
                 me.testFilesExistsRegie();
                 me.testFilesExistCasques();
             }
         },30*1000);
 
         this.loopToDo_interval=setInterval(function(){
-            if(ui.devicesTable.isDoingSomething()){
-                console.log("occupé")
-                return;
-            }
-            let taskToDo=sync.getNextToDo();
-            if(taskToDo){
-                console.log("va faire",taskToDo);
-                sync.performToDo(taskToDo);
-            }else{
-                console.log("rien à faire")
-            }
+            me.todoNext();
         },5*1000);
+    }
+
+    todoNext(){
+        if(ui.devicesTable.isDoingSomething()){
+            //console.log("occupé")
+            return;
+        }
+        let taskToDo=sync.getNextToDo();
+        if(taskToDo){
+            sync.performToDo(taskToDo);
+        }else{
+            //console.log("rien à faire")
+        }
     }
 
 

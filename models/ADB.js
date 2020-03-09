@@ -132,6 +132,56 @@ class ADB extends EventEmitter{
         });
     }
 
+    run(cmd, onComplete,onProgress,onError) {
+        var spawn = require('child_process').spawn;
+        let exec = require('child_process').exec;
+        var command = exec(cmd);
+        var result = '';
+        command.stdout.on('data', function(data) {
+            if(onProgress){
+                onProgress(data);
+            }
+            result += data.toString();
+        });
+        command.on('close', function(code) {
+            return onComplete(result);
+        });
+    }
+
+    pushContenu2(deviceId,filePath,onComplete,onProgress,onError){
+        let me=this;
+        let localFile = this.machinePath(filePath);
+        let destFile = this.devicePath(filePath);
+        let destFileTmp = destFile+".tmp";
+        let cmd="adb -s "+deviceId+" push "+localFile+" "+destFileTmp;
+        //console.log(cmd);
+        this.run(cmd,
+            function(){
+                //renomme le fichier temporaire en nom de fichier normal
+                me.shell(deviceId,`mv -f ${destFileTmp} ${destFile}`
+                    ,function(){
+                        onComplete();
+                    }
+                );
+            },
+            function(d){
+                //console.log(d);
+                let percent=0;
+                let regex = /([0-9]*)%/gm;
+                let arr = regex.exec(d);
+                //console.log(arr);
+                if(arr){
+                    percent=arr[1];
+                    //console.log(percent);
+                }
+                onProgress(Number(percent));
+            },
+            onError
+        );
+    }
+
+
+
     /**
      * Ajoute une contenu sur le device spécifié
      * @param {string} deviceId

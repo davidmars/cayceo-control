@@ -20,8 +20,11 @@ casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
     ui.casques.removeCasque(casqueModel.ip);
 });
 
-casquesManager.on(EVENT_CASQUE_PLUGGED,function(){
+casquesManager.on(EVENT_CASQUE_PLUGGED,function(casque){
     sync.testFilesExistCasques();
+});
+casquesManager.on(EVENT_CASQUE_UNPLUGGED,function(casque){
+    ui.devicesTable.devicesById[casque.ip].resetDoings();
 });
 
 
