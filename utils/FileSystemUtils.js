@@ -173,5 +173,36 @@ class FileSystemUtils {
             }
         }
     }
+
+    /**
+     * Efface un fichier
+     * @param {string} file
+     * @param {function} cbSuccess
+     * @param {function} cbError Renvoie l'erreur en argument
+     */
+    static removeFile(file,cbSuccess,cbError){
+        if(!cbSuccess){
+            cbSuccess=function(){
+                console.log(file+" effacé!")
+            }
+        }
+        if(!cbError){
+            cbError=function(err){
+                console.error(err);
+            }
+        }
+        if(fs.existsSync(file)){
+            fs.unlink(file, function (err) {
+                if (err){
+                    cbError(err);
+                }else{
+                    cbSuccess();
+                }
+            });
+        }else{
+            let err="le fichier n'existe pas";
+            cbError(err);
+        }
+    }
 }
 module.exports = FileSystemUtils;
