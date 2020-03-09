@@ -20,17 +20,18 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
         contenu.duration,
         contenu.short
     ).setDetails(contenu);
-
-    if(sync.data.json.jukebox.usetags){
-        for(let cat of contenu.categories){
-            f.addCategory(cat);
-        }
+    for(let cat of contenu.categories){
+        f.addCategory(cat);
     }
-
-
     if(!contenu.disabled){
         casquesManager.addContenu(contenu.localFile);
     }
+
+
+
+
+
+
 
 });
 /**
@@ -38,15 +39,6 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
  */
 sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
     ui.screens.films.removeFilm(contenu.uid);
-    //efface les fichiers windows
-    FileSystemUtils.removeDirOfFile(contenu.localFileAbsolute,function(){
-        ui.log(
-            [
-                "Contenu supprimé de la borne"
-                ,contenu
-            ]);
-    });
-    casquesManager.removeContenu(contenu.localFile);
 });
 /**
  * Quand on se fait jeter par le serveur

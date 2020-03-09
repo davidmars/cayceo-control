@@ -20,6 +20,11 @@ casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
     ui.casques.removeCasque(casqueModel.ip);
 });
 
+casquesManager.on(EVENT_CASQUE_PLUGGED,function(){
+    sync.testFilesExistCasques();
+});
+
+
 
 //-----------commandes de l'utilisateur sur les casques------------------------
 

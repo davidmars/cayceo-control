@@ -164,13 +164,14 @@ class ADB extends EventEmitter{
                             );
                     });
                     transfer.on('error', function(){
+                        console.error("erreur transfer 1 = ",error);
                         onError();
                         reject();
                     })
                 })
             })
             .catch(function(error){
-                console.error("erreur transfer = ",error);
+                console.error("erreur transfer 2 = ",error);
                 onError();
             });
     }

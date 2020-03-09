@@ -112,9 +112,9 @@ class CasqueModel{
         if(!me._online){
             if(me.plugged){
                 //niveau de batterie depuis ADB si on peut pas faire autrement
-                adb.getBattery(me.deviceId,function(level){
-                    me.setBatteryLevel(level);
-                });
+                //adb.getBattery(me.deviceId,function(level){
+                    //me.setBatteryLevel(level);
+                //});
             }else{
                 me.setBatteryLevel("?");
             }
@@ -123,29 +123,7 @@ class CasqueModel{
         me.testAPK();
 
         //teste si les contenus sont à jour
-        me.checkContenusExists();
-
-        //teste si on a des fichiers à effacer sur le casque
-        if(!me.contenusSynchro.busy //si on est pas entrain de copier des bidules
-            && me.contenusSynchro.ready //si on est certain que tout va bien
-            && me.online //doit etre online pour s'assurer que la listes des fichiers va bien
-            && me.plugged //doit etre branché pour adb
-            && me.socketFiles //doit avoir des fichiers
-            && sync.files.length>0 //être certain que la synchro web contient bien des machins
-        ){
-            for(let f of me.socketFiles){
-                if(sync.files.indexOf(f)===-1){
-                    console.warn("il faut effacer "+f,sync.files);
-                    adb.deleteFile(me.deviceId,f,function(){
-                        wifi.askFileList(me);
-                    });
-                    break; //on efface pas plus d'un fichier à la fois
-                }else{
-                    //console.log("il ne faut pas effacer "+f);
-                }
-            }
-
-        }
+        //me.checkContenusExists();
 
     }
 
@@ -173,10 +151,12 @@ class CasqueModel{
     setPlugged(bool){
         this._plugged=bool;
         if(bool){
-            this.checkContenusExists();
+            casquesManager.emit(EVENT_CASQUE_PLUGGED,this);
+            //this.checkContenusExists();
             this.syncContenus();
             this.testAPK();
         }else{
+            casquesManager.emit(EVENT_CASQUE_UNPLUGGED,this);
             this.contenusSynchro.busy=false
         }
         this.refreshDisplay();
@@ -232,7 +212,7 @@ class CasqueModel{
         if(!this._getContenuEntryByFile(file)){
             let c=new ContenuSurCasque(file);
             this.contenus.push(c);
-            this.checkContenusExists();
+            //this.checkContenusExists();
             this.contenusSynchro.updateContenusReady();
             if(!this.contenusSynchro.ready){
                 this.syncContenus();
@@ -255,6 +235,9 @@ class CasqueModel{
         this.apkInfos.version=json.apkVersion;
         //fichiers
         this.socketFiles=json.fileList;
+        for(let f of this.socketFiles){
+            ui.devicesTable.getDeviceFile(this.ip,f);
+        }
         //infos sur la lecture en cours
         this.nowPlaying.isPlaying = json.isPlaying === 1;
         this.nowPlaying.contenuPath = json.contenuPath;
@@ -283,7 +266,7 @@ class CasqueModel{
                 break;
             }
         }
-        this.checkContenusExists();
+        //this.checkContenusExists();
         this.refreshDisplay();
         this.contenusSynchro.updateContenusReady();
         this.syncContenus();
@@ -309,9 +292,11 @@ class CasqueModel{
                     cont.fileExistsby.adb="testing";
                     adb.contenuExists(me.deviceId,cont.file,function(exist){
                         if(exist){
+                            ui.devicesTable.getDeviceFile(me.ip,cont.file).exists=1;
                             cont.fileExistsby.adb=cont.isOnCasque=true;
                             cont.status="ok";
                         }else{
+                            ui.devicesTable.getDeviceFile(me.ip,cont.file).exists=-1;
                             cont.fileExistsby.adb=cont.isOnCasque=false;
                             cont.status="to copy";
                             me.syncContenus();
@@ -333,7 +318,9 @@ class CasqueModel{
      * Une seule copie de fichier à la fois est faite sur le casque
      */
     syncContenus(){
-        console.log("syncContenus...");
+
+        console.warn("syncContenus... désactivé");
+        return;
         let me=this;
 
         for(let i =0;i<me.contenus.length;i++){
@@ -351,24 +338,32 @@ class CasqueModel{
                         me.refreshDisplay();
                         break;
                     case false: //il est pas sur le casque
-                        if(contenu.status!==    "copy in progress...") {
+                        if( contenu.status !==    "copy in progress...") {
+                            //todo VERY IMPORTANT tester si le fichier est sur la régie avant d'essayer de le copier sur le casque
                             contenu.status =    "copy in progress...";
                             me.contenusSynchro.busy = true;
+                            ui.devicesTable.getDeviceFile(me.ip,contenu.file).shouldExists=1;
+                            ui.devicesTable.getDeviceFile(me.ip,contenu.file).doing=1;
                             adb.pushContenu(
                                 me.deviceId,
                                 contenu.file,
                                 function () {
                                     contenu.status = "ok";
+                                    ui.devicesTable.getDeviceFile(me.ip,contenu.file).copyPercent=100;
+                                    ui.devicesTable.getDeviceFile(me.ip,contenu.file).exists=1;
+                                    ui.devicesTable.getDeviceFile(me.ip,contenu.file).doing=0;
                                     me.refreshDisplay();
                                     me.contenusSynchro.busy = false;
                                     me.syncContenus();//recursive call
                                 },
                                 function (percent) {
                                     contenu.status = `${percent}%`;
+                                    ui.devicesTable.getDeviceFile(me.ip,contenu.file).copyPercent=percent;
                                     me.contenusSynchro.percent=percent;
                                     me.refreshDisplay();
                                 }, function () {
                                     contenu.status = `error on copy`;
+                                    ui.devicesTable.getDeviceFile("régie",contenu.localFile).doing=-2;
                                     me.contenusSynchro.busy = false;
                                     me.refreshDisplay();
                                 }
@@ -385,6 +380,7 @@ class CasqueModel{
 
 
     refreshDisplay(){
+        //console.warn("casque refresh display")
         let me=this;
         /** @property {Casque} casqueUi **/
         let casqueUi=ui.casques.getCasqueByIp(me.ip);
@@ -395,9 +391,9 @@ class CasqueModel{
             casqueUi.setBatteryPlugged(me.plugged);
             casqueUi.setBattery(me.batteryLevel);
             casqueUi.setOnline(me.online);
-            casqueUi.setContenusReady(me.contenusSynchro.ready);
+            //casqueUi.setContenusReady(me.contenusSynchro.ready);
             if(!me.contenusSynchro.ready){
-                casqueUi.setCopyProgress(me.contenusSynchro.percent);
+                //casqueUi.setCopyProgress(me.contenusSynchro.percent);
             }
             casqueUi.setApkIsOk(me.isApkOk());
 

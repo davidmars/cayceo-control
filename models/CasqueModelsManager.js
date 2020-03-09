@@ -35,6 +35,14 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
+     *
+     * @returns {CasqueModel[]}
+     */
+    casquesList(){
+        return this._casques;
+    }
+
+    /**
      * Renvoie un json avec les infos des casques qui vont bien
      * @returns {CasqueJsonStored[]}
      * @private
