@@ -233,11 +233,17 @@ class CasqueModel{
         }
         //apk
         this.apkInfos.version=json.apkVersion;
+
         //fichiers
-        this.socketFiles=json.fileList;
-        for(let f of this.socketFiles){
-            ui.devicesTable.getDeviceFile(this.ip,f);
+        for(let f of json.fileList){
+            let df=ui.devicesTable.getDeviceFile(this.ip,f);
+            if(!this.socketFiles && df.exists !== -1){
+                //si c'est la première fois qu'on recoit la liste de fichier on estime que le fichier existe bien
+                df.exists=1;
+            }
         }
+        this.socketFiles=json.fileList;
+
         //infos sur la lecture en cours
         this.nowPlaying.isPlaying = json.isPlaying === 1;
         this.nowPlaying.contenuPath = json.contenuPath;
