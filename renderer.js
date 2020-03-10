@@ -98,9 +98,15 @@ machine.on(EVENT_READY,function(){
 
     //toutes les minutes loggue les ips du pc
 
+    let displayIp=function(){
+        let ips=machine.getIpAdresses();
+        ui.devicesTable.devicesById["régie"].ip=ips;
+        ui.log(["ipV4",ips]);
+    }();
     setInterval(function(){
-        ui.log(["ipV4",machine.getIpAdresses()]);
+        displayIp();
     },1000*60);
+
 
 
     let started=false;
@@ -112,7 +118,9 @@ machine.on(EVENT_READY,function(){
             return;
         }
         if(!wifi.listening ){
-            ui.log(["ipV4",machine.getIpAdresses()],true);
+            let ips=machine.getIpAdresses();
+            ui.devicesTable.devicesById["régie"].ip=ips;
+            ui.log(["ipV4",ips],true);
             ui.log("Waiting for socket...",true);
             return;
         }
@@ -150,20 +158,3 @@ machine.on(EVENT_READY,function(){
     });
 
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
