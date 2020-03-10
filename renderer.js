@@ -19,6 +19,7 @@ const Stats=    require("./Stats");
 
 
 
+
 require("./EVENTS");
 require("cayceo-ui/dist/cayceoUi");
 
@@ -49,6 +50,9 @@ ipcRenderer.on('MAJ done', function(event, text) {
 //machine
 window.machine=new Machine();
 machine.on(EVENT_READY,function(){
+
+
+
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
@@ -124,6 +128,9 @@ machine.on(EVENT_READY,function(){
             setTimeout(function(){
                 ui.screens.home.show();
             },5*1000);
+
+            sync.loopToDo();
+
         }
     };
     //Quand la synchro a fait tout ce qu'elle avait à faire...

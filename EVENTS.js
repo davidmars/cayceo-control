@@ -89,4 +89,14 @@ window.EVENT_CASQUE_ADDED="EVENT_CASQUE_ADDED";
  * @type {string}
  */
 window.EVENT_CASQUE_DELETED="EVENT_CASQUE_DELETED";
+/**
+ * Quand un casque vient d'être branché, le paramètre est le CasqueModel
+ * @type {string}
+ */
+window.EVENT_CASQUE_PLUGGED="EVENT_CASQUE_PLUGGED";
+/**
+ * Quand un casque vient d'être débranché, le paramètre est le CasqueModel
+ * @type {string}
+ */
+window.EVENT_CASQUE_UNPLUGGED="EVENT_CASQUE_UNPLUGGED";
 

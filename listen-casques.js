@@ -10,7 +10,6 @@ casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
         let c=sync.getContenus()[i];
         casqueModel.indexNewContenu(c.localFile);
     }
-    casqueModel.syncContenus();
 });
 /**
  * On vient de supprimer un casque
@@ -19,6 +18,14 @@ casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
     stats.pageView(`${EVENT_CASQUE_DELETED}/c-${casqueModel.ip}`);
     ui.casques.removeCasque(casqueModel.ip);
 });
+
+casquesManager.on(EVENT_CASQUE_PLUGGED,function(casque){
+    sync.testFilesExistCasques();
+});
+casquesManager.on(EVENT_CASQUE_UNPLUGGED,function(casque){
+    ui.devicesTable.devicesById[casque.ip].resetDoings();
+});
+
 
 
 //-----------commandes de l'utilisateur sur les casques------------------------

@@ -1,11 +1,9 @@
-const electron = require('electron');
-const { ipcRenderer } = require('electron');
 const FileSystemUtils=require("../utils/FileSystemUtils");
 const fs = require("fs");
 const EventEmitter = require("event-emitter-es6");
 const JsonStored = require("../utils/JsonStored");
-
-
+const { ipcRenderer } = require('electron');
+const slash = require('slash');
 
 /**
  * Objet qui synchronise l'application avec le serveur web
@@ -105,7 +103,7 @@ class Sync extends EventEmitter{
             clearInterval(me._intervalSynchro);
         }
         let delay=me._synchroDelay();
-        console.log("next sync in "+delay);
+        //console.log("next sync in "+delay);
         me._intervalSynchro=setInterval(function(){
             me._recursiveSynchro();
         },delay*1000);
@@ -158,17 +156,23 @@ class Sync extends EventEmitter{
         me.files=[];
         for(let i=0;i<this.getContenus().length;i++){
             let c=this.getContenus()[i];
+            ui.devicesTable.addFile(c.localFile,c.disabled);
             if(!c.disabled){
                 me.files.push(c.localFile);
             }
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
             c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
-            c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
-            c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
+
+            //c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
+            //c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
+
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
             c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
             let contenuWasReady=c.ready;
-            c.ready=c.localFileAbsolute_downloaded && c.localThumbAbsolute_downloaded && c.localThumbNoResizeAbsolute_downloaded;
+            c.ready=c.localFileAbsolute_downloaded
+                    //&& c.localThumbAbsolute_downloaded
+                    && c.localThumbNoResizeAbsolute_downloaded;
+
             if(!contenuWasReady && c.ready){
                 me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
             }
@@ -189,9 +193,10 @@ class Sync extends EventEmitter{
     disableEnableContenus(){
         //masque / affiche les contenus disabled
         for(let contenu of this.getContenus()){
-            let f=ui.films.getFilmById(contenu.uid);
-            if(f){
-                f.disabled=contenu.disabled;
+            let film=ui.films.getFilmById(contenu.uid);
+            //ui.devicesTable.addFile(contenu.localFile,contenu.disabled);
+            if(film){
+                film.disabled=contenu.disabled;
                 if(contenu.disabled){
                     //efface le contenu des casques
                     casquesManager.removeContenu(contenu.localFile);
@@ -202,7 +207,7 @@ class Sync extends EventEmitter{
 
     /**
      * La liste des contenus actuelle
-     * @returns {object[]}
+     * @returns {Contenu[]}
      */
     getContenus(){
         return this.data.json.contenus;
@@ -259,6 +264,7 @@ class Sync extends EventEmitter{
      * @param newJson
      */
     setNewJson(newJson){
+        console.log("setNewJson");
         let oldJson=this.data;
         if(!newJson.json){
             console.error("pas de json");
@@ -269,10 +275,10 @@ class Sync extends EventEmitter{
         this.data=newJson;
 
         if(this.data.json.jukebox.istestmachine===true){
-            console.warn("ALLOW_PRE_RELEASE");
+            //console.warn("ALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',true)
         }else{
-            console.warn("DISALLOW_PRE_RELEASE");
+            //console.warn("DISALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
 
@@ -280,7 +286,21 @@ class Sync extends EventEmitter{
         ui.log({"Nouvelle version des contenus à synchroniser":this.data});
         ui.popIns.webApiData.displayData(newJson);
 
+        //--------------gros fichiers-----------------------
+
+        //va faire un petit tour rapide pour établir la liste de ce qui est là et ce qui l'est pas
+        for(let contenu of this.data.json.contenus){
+            let cellHead=ui.devicesTable.getFileHead(contenu.localFile);
+            cellHead.serverPath=contenu.serverFile;
+            cellHead.contenuName=contenu.name;
+            cellHead.disabled=contenu.disabled;
+            //sur la régie
+            let cellFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
+            cellFile.shouldExists=1;
+        }
+
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
+        //todo revoir ça avec la devicesTable
         if(oldJson && oldJson.json && oldJson.json.contenus){
             let newUids=[];
             let oldUids=[];
@@ -295,14 +315,19 @@ class Sync extends EventEmitter{
             for(i=0;i<oldUids.length;i++){
                 if($.inArray(oldUids[i],newUids) === -1){
                     let contenu=this.getContenuByUid(oldUids[i],oldJson.json.contenus);
-                    console.warn("contenu supprimé",contenu);
+                    //console.warn("contenu supprimé",contenu);
+                    ui.devicesTable.getDeviceFile("régie",contenu.localFile).shouldExists=-1;
                     this.emit(window.EVENT_WEB_SYNC_CONTENU_DELETED,contenu);
                 }
             }
-
-
-
         }
+
+        //essaye de faire les taches
+        let me=this;
+        setInterval(function(){
+            me.todoNext();
+        },1000);
+
 
 
 
@@ -328,7 +353,6 @@ class Sync extends EventEmitter{
         return null;
     }
 
-
     /**
      * Télécharge le json
      * @private
@@ -341,8 +365,7 @@ class Sync extends EventEmitter{
             data:{
                 machinetoken:me.machine.machineId,
                 machinename:me.machine.name,
-                uuid:me.machine.uuid,
-                exeversion:electron.remote.app.getVersion()
+                uuid:me.machine.uuid
             },
             success:function(data){
                 //console.log(data);
@@ -417,6 +440,8 @@ class Sync extends EventEmitter{
         }
 
 
+
+
         //chaque contenu
         /** @property {ContenuModel} contenu */
         for(let contenu of me.data.json.contenus){
@@ -425,6 +450,7 @@ class Sync extends EventEmitter{
 
             //dwd thumb
             //contenu.localThumbAbsolute=this.localStoragePath+"/"+contenu.localThumb;
+            /*
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbAbsolute);
             if(!fs.existsSync(contenu.localThumbAbsolute)){
                 let log=ui.log(`Téléchargement de ${contenu.serverThumb} `,true);
@@ -449,6 +475,7 @@ class Sync extends EventEmitter{
                 );
                 return;
             }
+            */
             //dwd thumb no resize
             //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
@@ -476,48 +503,10 @@ class Sync extends EventEmitter{
                 return;
             }
 
-            //dwd le gros fichier
-            //contenu.localFileAbsolute=this.localStoragePath+"/"+contenu.localFile;
-            FileSystemUtils.ensureDirectoryExistence(contenu.localFileAbsolute);
-            if(!fs.existsSync(contenu.localFileAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverFile} `,true);
-                FileSystemUtils.download(
-                    contenu.serverFile
-                    ,contenu.localFileAbsolute
-                    ,function(file){
-                        ui.layout.setContenuUpdate(`${contenu.name} terminé`);
-                        setTimeout(function(){
-                            ui.layout.setContenuUpdate(null);
-                        },3000);
-                        log.setContent(`Téléchargement vers ${file} terminé :)`);
-                        me.dwdNext();
-                        me._applyLocalAndCheckReady();
-                    }
-                    ,function(percent,bytes,total){
-                        ui.layout.setContenuUpdate(`${contenu.name} ${percent}%`);
-                        log.setContent([
-                            "Téléchargement"
-                            ,contenu.serverFile
-                            ,percent+"%"
-                            ,FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)
-                        ]);
-                    }
-                    ,function (err) {
-                        me.emit(EVENT_NETWORK_ERROR);
-                        ui.layout.setContenuUpdate(`${contenu.name} error`);
-                        setTimeout(function(){
-                            ui.layout.setContenuUpdate(null);
-                        },3000);
-                        log.setContent([
-                            "Erreur de téléchargement"
-                            ,contenu.serverFile
-                            ,contenu.localFileAbsolute
-                            ,err
-                        ])
-                    }
-                );
-                return;
-            }
+
+
+
+
         }
         me.ready=true;
         me.syncing=false;
@@ -527,6 +516,252 @@ class Sync extends EventEmitter{
 
 
     }
+
+    /**
+     * Liste tous les fichiers physiques de la régie dans "contenus" et les marque comme existants
+     * Marque tous les autres fichiers référencés comme innexistants
+     */
+    testFilesExistsRegie(){
+        if(ui.devicesTable.isDoingSomething()){
+            return;
+        }
+        let existingFilesAbsolute=FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/contenus");
+        let existingFiles=[];
+        for(let f in existingFilesAbsolute){
+            let p=existingFilesAbsolute[f].replace(slash(machine.appStoragePath)+"/",'');
+            existingFiles.push(p);
+        }
+        for(let path in existingFiles){
+            ui.devicesTable.getDeviceFile("régie",existingFiles[path]).exists=1;
+        }
+        //marque les fichiers qui n'existent pas
+        for(let path in ui.devicesTable.filesHeadCells){
+            if(existingFiles.indexOf(path)===-1){
+                let dv=ui.devicesTable.getDeviceFile("régie",path,true);
+                if(dv){
+                    dv.exists=-1;
+                }
+            }
+        }
+        //va marquer les fichiers inconnus comme inutiles
+        for(let path in ui.devicesTable.filesHeadCells){
+            if(this.files.indexOf(path)===-1){
+                let dv=ui.devicesTable.getDeviceFile("régie",path,true);
+                if(dv && dv.shouldExists === 0){
+                    dv.shouldExists=-1;
+                }
+            }
+        }
+    }
+
+    /**
+     * Teste via adb si les contenus existent sur le casque
+     */
+    testFilesExistCasques(){
+        if(ui.devicesTable.isDoingSomething()){
+            return;
+        }
+        for(let path in ui.devicesTable.filesHeadCells){
+            for(let casque of casquesManager.casquesList()){
+                if(casque.plugged){
+                    //console.log("testFilesExistCasques",casque.deviceId,path);
+                    adb.contenuExists(casque.deviceId,path,function(exists){
+                        if(exists){
+                            ui.devicesTable.getDeviceFile(casque.ip,path).exists=1;
+                        }else{
+                            let df=ui.devicesTable.getDeviceFile(casque.ip,path,true)
+                            if(df){
+                                df.exists=-1;
+                            }
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @returns {null|FileCell}
+     */
+    getNextToDo(){
+        //si une opération est en cours (copie ou effaçage) on renvoie rien
+        for(let device of ui.devicesTable.devicesArray()){
+            if(device.isDoingSomething()){
+               return null;
+            }
+        }
+        for(let device of ui.devicesTable.devicesArray()){
+            if(device.isUsable()){ //est branché
+                for(let path in device.filesCells){
+                    let fc=device.filesCells[path];
+                    if(fc.toDo===-1){
+                        return fc;
+                    }
+                }
+                for(let path in device.filesCells){
+                    let fc=device.filesCells[path];
+                    if(fc.toDo===1){
+                        return fc;
+                    }
+                }
+            }
+        }
+        return null;
+
+    }
+
+
+
+    /**
+     *
+     * @param {FileCell} fileCell
+     */
+    performToDo(fileCell){
+
+        let me=this;
+
+        if(fileCell.deviceCol.casque){
+            let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
+            switch (fileCell.toDo) {
+                case -1:
+                    fileCell.doing=-1;
+                    adb.deleteFile(casque.deviceId,fileCell.path,function(){
+                        fileCell.doing=0;
+                        fileCell.exists=-1;
+                        wifi.askFileList(casque);
+                        me.todoNext();
+                    });
+                    break;
+
+                case 1:
+                    fileCell.doing=1;
+                    adb.pushContenu2(
+                        casque.deviceId,
+                        fileCell.path,
+                        function () {
+                            fileCell.doing=0;
+                            fileCell.exists=1;
+                            fileCell.copyPercent=100;
+                            wifi.askFileList(casque);
+                            me.todoNext();
+                        },
+                        function (percent) {
+                            fileCell.copyPercent=percent;
+                        }, function (error) {
+                            console.error("error adb push2",error)
+                            fileCell.doing=-2;
+                            wifi.askFileList(casque);
+                        }
+                    );
+                    break;
+            }
+        }else{
+            let headFile=ui.devicesTable.getFileHead(fileCell.path);
+            let localPath=me.localStoragePath+"/"+fileCell.path;
+            switch (fileCell.toDo) {
+                case -1:
+                    FileSystemUtils.removeFile(localPath,
+                        function(){
+                            fileCell.doing=0;
+                            fileCell.exists=-1;
+                            ui.log(["Contenu supprimé de la régie",fileCell.path]);
+                            me.todoNext();
+                        },
+                        function(){
+                            fileCell.doing=-2;
+                        }
+                    );
+                    break;
+
+                case 1:
+                    //dwd le gros fichier
+                    if(!headFile){
+                        console.error("headFile introuvable",fileCell.path)
+                    }else{
+                        if(!headFile.serverPath){
+                            console.error("headFile serverPath introuvable",fileCell.path,headFile)
+                        }
+                    }
+
+                    FileSystemUtils.ensureDirectoryExistence(localPath);
+                    if(!fs.existsSync(localPath)){
+                        let log=ui.log(`Téléchargement de ${headFile.serverPath} `,true);
+                        fileCell.doing=1;
+                        FileSystemUtils.download(
+                            headFile.serverPath
+                            ,localPath
+                            ,function(file){
+                                ui.layout.setContenuUpdate(`${headFile.contenuName} terminé`);
+                                fileCell.exists=1;
+                                fileCell.doing=0;
+                                setTimeout(function(){
+                                    ui.layout.setContenuUpdate(null);
+                                    me.todoNext();
+                                },3000);
+                                log.setContent(`Téléchargement vers ${file} terminé :)`);
+                            }
+                            ,function(percent,bytes,total){
+                                fileCell.copyPercent=percent;
+                                log.setContent(["Téléchargement",headFile.serverPath,percent+"%",FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)]);
+                            }
+                            ,function (err) {
+                                me.emit(EVENT_NETWORK_ERROR);
+                                fileCell.doing=-2;
+                                ui.layout.setContenuUpdate(`${headFile.contenuName} error`);
+                                setTimeout(function(){
+                                    ui.layout.setContenuUpdate(null);
+                                },3000);
+                                log.setContent(["Erreur de téléchargement",headFile.serverPath,localPath,err]);
+                            }
+                        );
+                        return;
+                    }
+            }
+        }
+
+
+    }
+
+    loopToDo(){
+        let me=this;
+        if(this.loopToDo_interval){
+            return;
+        }
+
+        //un premier listing des fichiers
+        if(!ui.devicesTable.isDoingSomething()){
+            me.testFilesExistsRegie();
+            me.testFilesExistCasques();
+        }
+        setInterval(function(){
+            if(!ui.devicesTable.isDoingSomething()){
+                me.testFilesExistsRegie();
+                me.testFilesExistCasques();
+            }
+        },30*1000);
+
+        this.loopToDo_interval=setInterval(function(){
+            me.todoNext();
+        },5*1000);
+    }
+
+    /**
+     * si possible lance la prochaine tache à faire
+     */
+    todoNext(){
+        if(ui.devicesTable.isDoingSomething()){
+            //console.log("occupé")
+            return;
+        }
+        let taskToDo=sync.getNextToDo();
+        if(taskToDo){
+            sync.performToDo(taskToDo);
+        }else{
+            //console.log("rien à faire")
+        }
+    }
+
 
 }
 module.exports = Sync;

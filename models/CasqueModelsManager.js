@@ -35,6 +35,14 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
+     *
+     * @returns {CasqueModel[]}
+     */
+    casquesList(){
+        return this._casques;
+    }
+
+    /**
      * Renvoie un json avec les infos des casques qui vont bien
      * @returns {CasqueJsonStored[]}
      * @private
@@ -145,7 +153,6 @@ class CasqueModelsManager extends EventEmitter{
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
             c.indexNewContenu(file);
-            c.syncContenus();
         }
     }
     /**
@@ -157,7 +164,6 @@ class CasqueModelsManager extends EventEmitter{
         for(let i=0; i<this._casques.length; i++){
             let c=this._casques[i];
             c.removeContenu(file);
-            c.syncContenus();
         }
     }
 

@@ -3,11 +3,21 @@ var https = require('https');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
+var glob = require("glob");
 
 /**
  * Methodes utilitaires pour le système de fichier
  */
 class FileSystemUtils {
+    /**
+     * Revoie la liste récursive des fichiers dans le répertoire donné
+     * @param dir
+     * @returns {*}
+     */
+    static getFilesRecursive(dir){
+        return glob.sync(dir+"/**/*",{"nodir":true});
+    }
+
     /**
      * S'assure que le répertoire d'un fichier donné existe et le crée le cas échéant
      * @param filePath
@@ -161,6 +171,37 @@ class FileSystemUtils {
                 console.log("efface le contenu de "+p)
                 FileSystemUtils.removeDir(p,cb)
             }
+        }
+    }
+
+    /**
+     * Efface un fichier
+     * @param {string} file
+     * @param {function} cbSuccess
+     * @param {function} cbError Renvoie l'erreur en argument
+     */
+    static removeFile(file,cbSuccess,cbError){
+        if(!cbSuccess){
+            cbSuccess=function(){
+                console.log(file+" effacé!")
+            }
+        }
+        if(!cbError){
+            cbError=function(err){
+                console.error(err);
+            }
+        }
+        if(fs.existsSync(file)){
+            fs.unlink(file, function (err) {
+                if (err){
+                    cbError(err);
+                }else{
+                    cbSuccess();
+                }
+            });
+        }else{
+            let err="le fichier n'existe pas";
+            cbError(err);
         }
     }
 }

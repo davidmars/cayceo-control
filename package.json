@@ -19,17 +19,19 @@
   "author": "davidmars",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^6.1.7",
+    "electron": "^6.1.9",
     "electron-builder": "^21.2.0"
   },
   "dependencies": {
     "adbkit": "^2.11.1",
-    "cayceo-ui": "^1.8.3",
+    "cayceo-ui": "file:../cayceo-ui",
     "electron-updater": "^4.2.2",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
+    "glob": "^7.1.6",
     "node-localstorage": "^2.1.5",
     "rimraf": "^3.0.2",
+    "slash": "^3.0.0",
     "socket.io": "^2.2.0",
     "universal-analytics": "^0.4.20",
     "uuid": "^3.4.0"
