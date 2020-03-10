@@ -10,7 +10,6 @@ casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
         let c=sync.getContenus()[i];
         casqueModel.indexNewContenu(c.localFile);
     }
-    casqueModel.syncContenus();
 });
 /**
  * On vient de supprimer un casque

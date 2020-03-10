@@ -140,7 +140,7 @@ class Wifi extends EventEmitter{
         obj.ip = casqueModel.ip;
         obj.cmd = ToCasque.CMD_CHECK_FILES;
         obj.msg = `demande la mise à jour de la filelist sur le casque ${casqueModel.ip} connard`
-        console.log("demande la mise à jour de la filelist sur ",casqueModel,obj);
+        //console.log("demande la mise à jour de la filelist sur ",casqueModel,obj);
         io.to(casqueModel.socketId).emit('chat' , obj );
     }
 

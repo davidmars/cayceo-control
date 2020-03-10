@@ -6,10 +6,6 @@ class ContenuSurCasque{
         this.file=file;
         this.status="";
         this.isOnCasque=null;
-        this.fileExistsby={
-            "adb":null,
-            "socket":null
-        }
     }
 }
 
