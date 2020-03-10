@@ -102,10 +102,11 @@ machine.on(EVENT_READY,function(){
         let ips=machine.getIpAdresses();
         ui.devicesTable.devicesById["régie"].ip=ips;
         ui.log(["ipV4",ips]);
-    }();
+    };
     setInterval(function(){
         displayIp();
     },1000*60);
+    displayIp();
 
 
 

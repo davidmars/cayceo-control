@@ -131,12 +131,14 @@ class Sync extends EventEmitter{
     /**
      * Applique les chemins locaux absoluts aux urls
      * Applique les variables
+     * vérifie si les contenus sont ok
      * @private
      */
     _applyLocalAndCheckReady(){
+        console.log("_applyLocalAndCheckReady");
         let me=this;
         let apkOk=false;
-        let contenuOk=false;
+        let auMoinsUnContenuOk=false;
         //refresh
         me._recursiveSynchro();
         //logo
@@ -163,27 +165,17 @@ class Sync extends EventEmitter{
                 me.files.push(c.localFile);
             }
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
-            c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
-
-            //c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
-            //c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
-
+            c.localFileAbsolute_downloaded=ui.devicesTable.getDeviceFile("régie",c.localFile).exists===1;
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
             c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
-            let contenuWasReady=c.ready;
-            c.ready=c.localFileAbsolute_downloaded
-                    //&& c.localThumbAbsolute_downloaded
-                    && c.localThumbNoResizeAbsolute_downloaded;
 
-            if(!contenuWasReady && c.ready){
+            if(c.localThumbNoResizeAbsolute_downloaded && c.localFileAbsolute_downloaded){
+                c.ready=true;
                 me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
-            }
-            if(c.ready){
-                contenuOk=true;
+                auMoinsUnContenuOk=true;
             }
         }
-
-        if(contenuOk && apkOk){
+        if(auMoinsUnContenuOk && apkOk){
             me.ready=true;
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
         }
@@ -196,7 +188,6 @@ class Sync extends EventEmitter{
         //masque / affiche les contenus disabled
         for(let contenu of this.getContenus()){
             let film=ui.films.getFilmById(contenu.uid);
-            //ui.devicesTable.addFile(contenu.localFile,contenu.disabled);
             if(film){
                 film.disabled=contenu.disabled;
             }
@@ -322,7 +313,7 @@ class Sync extends EventEmitter{
 
         //essaye de faire les taches
         let me=this;
-        setInterval(function(){
+        setTimeout(function(){
             me.todoNext();
         },1000);
 
@@ -437,44 +428,9 @@ class Sync extends EventEmitter{
             );
             return;
         }
-
-
-
-
         //chaque contenu
         /** @property {ContenuModel} contenu */
         for(let contenu of me.data.json.contenus){
-
-            //à chaque fois qu'un fichier doit être téléchargé rapelle la fonction en récusrsif.
-
-            //dwd thumb
-            //contenu.localThumbAbsolute=this.localStoragePath+"/"+contenu.localThumb;
-            /*
-            FileSystemUtils.ensureDirectoryExistence(contenu.localThumbAbsolute);
-            if(!fs.existsSync(contenu.localThumbAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverThumb} `,true);
-                FileSystemUtils.download(
-                    contenu.serverThumb
-                    ,contenu.localThumbAbsolute
-                    ,function(file){
-                        log.setContent(`Téléchargement vers ${file} terminé :)`)
-                        me.dwdNext();
-                    }
-                    ,function(percent,bytes,total){
-                        log.setContent(`Téléchargement de ${contenu.serverThumb}  ${percent}%`)
-                    }
-                    ,function (err) {
-                        log.setContent([
-                            "Erreur de téléchargement"
-                            ,contenu.serverThumb
-                            ,contenu.localThumbAbsolute
-                            ,err
-                        ])
-                    }
-                );
-                return;
-            }
-            */
             //dwd thumb no resize
             //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
@@ -501,11 +457,6 @@ class Sync extends EventEmitter{
                 );
                 return;
             }
-
-
-
-
-
         }
         me.ready=true;
         me.syncing=false;
@@ -524,6 +475,7 @@ class Sync extends EventEmitter{
         if(ui.devicesTable.isDoingSomething()){
             return;
         }
+        console.log("testFilesExistsRegie");
         let existingFilesAbsolute=FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/contenus");
         let existingFiles=[];
         for(let f in existingFilesAbsolute){
@@ -533,6 +485,8 @@ class Sync extends EventEmitter{
         for(let path in existingFiles){
             ui.devicesTable.getDeviceFile("régie",existingFiles[path]).exists=1;
         }
+
+
         //marque les fichiers qui n'existent pas
         for(let path in ui.devicesTable.filesHeadCells){
             if(existingFiles.indexOf(path)===-1){
@@ -551,6 +505,7 @@ class Sync extends EventEmitter{
                 }
             }
         }
+        this._applyLocalAndCheckReady();
     }
 
     /**
@@ -560,6 +515,7 @@ class Sync extends EventEmitter{
         if(ui.devicesTable.isDoingSomething()){
             return;
         }
+        console.log("testFilesExistCasques");
         for(let path in ui.devicesTable.filesHeadCells){
             for(let casque of casquesManager.casquesList()){
                 if(casque.plugged){
@@ -685,7 +641,6 @@ class Sync extends EventEmitter{
                             console.error("headFile serverPath introuvable",fileCell.path,headFile)
                         }
                     }
-
                     FileSystemUtils.ensureDirectoryExistence(localPath);
                     if(!fs.existsSync(localPath)){
                         let log=ui.log(`Téléchargement de ${headFile.serverPath} `,true);
@@ -700,7 +655,7 @@ class Sync extends EventEmitter{
                                 setTimeout(function(){
                                     ui.layout.setContenuUpdate(null);
                                     me.todoNext();
-                                },3000);
+                                },1000);
                                 log.setContent(`Téléchargement vers ${file} terminé :)`);
                             }
                             ,function(percent,bytes,total){
@@ -713,7 +668,7 @@ class Sync extends EventEmitter{
                                 ui.layout.setContenuUpdate(`${headFile.contenuName} error`);
                                 setTimeout(function(){
                                     ui.layout.setContenuUpdate(null);
-                                },3000);
+                                },1000);
                                 log.setContent(["Erreur de téléchargement",headFile.serverPath,localPath,err]);
                             }
                         );
@@ -732,19 +687,20 @@ class Sync extends EventEmitter{
         }
         this.loopToDo_interval=setInterval(function(){
             me.todoNext();
-        },5*1000);
+        },60*1000);
     }
 
     /**
      * si possible lance la prochaine tache à faire
      */
     todoNext(){
-        this.testFilesExistCasques();
-        this.testFilesExistsRegie();
+        console.warn("todoNext");
         if(ui.devicesTable.isDoingSomething()){
-            //console.log("occupé")
+            console.log("occupé")
             return;
         }
+        this.testFilesExistCasques();
+        this.testFilesExistsRegie();
         let taskToDo=sync.getNextToDo();
         if(taskToDo){
             sync.performToDo(taskToDo);
