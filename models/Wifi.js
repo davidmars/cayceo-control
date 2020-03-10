@@ -20,9 +20,11 @@ class Wifi extends EventEmitter{
         let me =this;
         http.close();
         http.on("error",function(e){
+            let ips=machine.getIpAdresses();
             console.error("socket error",e);
-            ui.log(["ipV4",machine.getIpAdresses(),true]);
+            ui.log(["ipV4",ips,true]);
             ui.log(["socket error",e],true);
+            ui.devicesTable.devicesById["régie"].ip=ips;
         });
         http.on('listening', function() {
             ui.log(["listenning socket on",http.address()]);
