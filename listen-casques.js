@@ -1,28 +1,38 @@
 /**
  * On vient d'ajouter un nouveau casque
  */
-casquesManager.on(EVENT_CASQUE_ADDED,function (casqueModel) {
+casquesManager.on(EVENT_CASQUE_ADDED,
+    /** @param {CasqueModel} casque */
+    function (casque) {
     if(typeof stats !== "undefined"){
-        stats.pageView(`${EVENT_CASQUE_ADDED}/c-${casqueModel.ip}`);
+        stats.pageView(`${EVENT_CASQUE_ADDED}/c-${casque.ip}`);
     }
-    ui.casques.addCasque(casqueModel.ip);
-    for(let i=0;i<sync.getContenus().length;i++){
-        let c=sync.getContenus()[i];
-        casqueModel.indexNewContenu(c.localFile);
-    }
+    ui.casques.addCasque(casque.ip);
 });
 /**
  * On vient de supprimer un casque
  */
-casquesManager.on(EVENT_CASQUE_DELETED,function (casqueModel) {
-    stats.pageView(`${EVENT_CASQUE_DELETED}/c-${casqueModel.ip}`);
-    ui.casques.removeCasque(casqueModel.ip);
+casquesManager.on(EVENT_CASQUE_DELETED,
+    /** @param {CasqueModel} casque */
+    function (casque) {
+    stats.pageView(`${EVENT_CASQUE_DELETED}/c-${casque.ip}`);
+    ui.casques.removeCasque(casque.ip);
 });
-
-casquesManager.on(EVENT_CASQUE_PLUGGED,function(casque){
-    sync.testFilesExistCasques();
-});
-casquesManager.on(EVENT_CASQUE_UNPLUGGED,function(casque){
+/**
+ * On vient de brancher un casque
+ */
+casquesManager.on(EVENT_CASQUE_PLUGGED,
+    /** @param {CasqueModel} casque */
+    function(casque){
+        sync.testFilesExistCasques();
+    }
+);
+/**
+ * On vient de débrancher un casque
+ */
+casquesManager.on(EVENT_CASQUE_UNPLUGGED,
+    /** @param {CasqueModel} casque */
+    function(casque){
     ui.devicesTable.devicesById[casque.ip].resetDoings();
 });
 

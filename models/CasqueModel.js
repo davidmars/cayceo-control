@@ -1,4 +1,3 @@
-const ContenuSurCasque=require("./casqueExtensions/ContenuSurCasque.js");
 const CasqueApkInfos=require("./casqueExtensions/CasqueApkInfos.js");
 const CasqueNowPlaying=require("./casqueExtensions/CasqueNowPlaying.js");
 const CasqueContenusSynchro=require("./casqueExtensions/CasqueContenusSynchro.js");
@@ -43,6 +42,11 @@ class CasqueModel{
          * @type {CasqueApkInfos}
          */
         this.apkInfos=new CasqueApkInfos();
+        /**
+         * Affiche l'espace libre
+         * @type {string}
+         */
+        this.diskUsage="";
 
         //-----------propriétés live déduites depuis ADB
 
@@ -183,37 +187,6 @@ class CasqueModel{
     get online() {return this._online;}
 
 
-
-
-
-
-
-    /**
-     * Retourne l'entrée d'un contenu par son fichier
-     * @param {string} file
-     * @returns {ContenuSurCasque}
-     * @private
-     */
-    _getContenuEntryByFile(file){
-        for(let i=0;i<this.contenus.length;i++){
-            let c=this.contenus[i];
-            if(c.file===file){
-                return c;
-            }
-        }
-        return null;
-    }
-    /**
-     * Indexe un contenu qui est, devrait ou sera sur le casque
-     * @param file
-     */
-    indexNewContenu(file){
-        if(!this._getContenuEntryByFile(file)){
-            let c=new ContenuSurCasque(file);
-            this.contenus.push(c);
-        }
-    }
-
     /**
      *
      * @param {FromCasque} json
@@ -255,19 +228,7 @@ class CasqueModel{
      * @param file
      */
     removeContenu(file){
-        let c=this._getContenuEntryByFile(file);
-        if(c){
-            c.shouldBeDeleted=true;
-            c.status="to delete";
-        }
-        for(let i =0;i<this.contenus.length;i++) {
-            if(this.contenus[i].file===file){
-                this.contenus.splice(i,1);
-                break;
-            }
-        }
-        //this.checkContenusExists();
-        this.refreshDisplay();
+
 
     }
 

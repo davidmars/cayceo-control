@@ -23,15 +23,6 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
     for(let cat of contenu.categories){
         f.addCategory(cat);
     }
-    if(!contenu.disabled){
-        casquesManager.addContenu(contenu.localFile);
-    }
-
-
-
-
-
-
 
 });
 /**

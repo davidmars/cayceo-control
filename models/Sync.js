@@ -197,10 +197,6 @@ class Sync extends EventEmitter{
             //ui.devicesTable.addFile(contenu.localFile,contenu.disabled);
             if(film){
                 film.disabled=contenu.disabled;
-                if(contenu.disabled){
-                    //efface le contenu des casques
-                    casquesManager.removeContenu(contenu.localFile);
-                }
             }
         }
     }
@@ -574,7 +570,10 @@ class Sync extends EventEmitter{
                                 df.exists=-1;
                             }
                         }
-                    })
+                    });
+                    adb.diskSpace(casque.deviceId,function(output){
+                        casque.diskUsage=output;
+                    });
                 }
             }
         }
@@ -728,19 +727,6 @@ class Sync extends EventEmitter{
         if(this.loopToDo_interval){
             return;
         }
-
-        //un premier listing des fichiers
-        if(!ui.devicesTable.isDoingSomething()){
-            me.testFilesExistsRegie();
-            me.testFilesExistCasques();
-        }
-        setInterval(function(){
-            if(!ui.devicesTable.isDoingSomething()){
-                me.testFilesExistsRegie();
-                me.testFilesExistCasques();
-            }
-        },30*1000);
-
         this.loopToDo_interval=setInterval(function(){
             me.todoNext();
         },5*1000);
@@ -750,6 +736,8 @@ class Sync extends EventEmitter{
      * si possible lance la prochaine tache à faire
      */
     todoNext(){
+        this.testFilesExistCasques();
+        this.testFilesExistsRegie();
         if(ui.devicesTable.isDoingSomething()){
             //console.log("occupé")
             return;

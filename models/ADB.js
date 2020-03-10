@@ -67,6 +67,30 @@ class ADB extends EventEmitter{
             });
     }
 
+    diskSpace(deviceId,cb){
+        this.shell(deviceId,"df -h "+this.devicePath("."),function(output){
+            const regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
+            let m;
+            let sizes=[];
+            while ((m = regex.exec(output)) !== null) {
+                // This is necessary to avoid infinite loops with zero-width matches
+                if (m.index === regex.lastIndex) {
+                    regex.lastIndex++;
+                }
+                sizes.push(m[1])
+            }
+            if(sizes.length===3){
+                cb({
+                    "size":sizes[0],
+                    "used":sizes[1],
+                    "available":sizes[2],
+                })
+            }else{
+                cb(output);
+            }
+        });
+    }
+
     /**
      * Eface un fichier
      * @param deviceId

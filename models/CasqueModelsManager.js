@@ -145,29 +145,6 @@ class CasqueModelsManager extends EventEmitter{
     }
 
     /**
-     * Ajoute un contenu à tous les casques
-     * Chaque casque se chargera de gérer si il est copié ou non
-     * @param file
-     */
-    addContenu(file){
-        for(let i=0; i<this._casques.length; i++){
-            let c=this._casques[i];
-            c.indexNewContenu(file);
-        }
-    }
-    /**
-     * Efface un contenu à tous les casques
-     * Chaque casque se chargera de gérer si il est effectivement effacé ou non
-     * @param file
-     */
-    removeContenu(file){
-        for(let i=0; i<this._casques.length; i++){
-            let c=this._casques[i];
-            c.removeContenu(file);
-        }
-    }
-
-    /**
      * Installe l'apk sur tous les casques
      */
     installCurrentApk(){
