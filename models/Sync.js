@@ -162,12 +162,17 @@ class Sync extends EventEmitter{
             }
             c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
             c.localFileAbsolute_downloaded=fs.existsSync(c.localFileAbsolute);
-            c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
-            c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
+
+            //c.localThumbAbsolute=this.localStoragePath+"/"+c.localThumb;
+            //c.localThumbAbsolute_downloaded=fs.existsSync(c.localThumbAbsolute);
+
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
             c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
             let contenuWasReady=c.ready;
-            c.ready=c.localFileAbsolute_downloaded && c.localThumbAbsolute_downloaded && c.localThumbNoResizeAbsolute_downloaded;
+            c.ready=c.localFileAbsolute_downloaded
+                    //&& c.localThumbAbsolute_downloaded
+                    && c.localThumbNoResizeAbsolute_downloaded;
+
             if(!contenuWasReady && c.ready){
                 me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
             }
@@ -188,10 +193,10 @@ class Sync extends EventEmitter{
     disableEnableContenus(){
         //masque / affiche les contenus disabled
         for(let contenu of this.getContenus()){
-            let f=ui.films.getFilmById(contenu.uid);
+            let film=ui.films.getFilmById(contenu.uid);
             //ui.devicesTable.addFile(contenu.localFile,contenu.disabled);
-            if(f){
-                f.disabled=contenu.disabled;
+            if(film){
+                film.disabled=contenu.disabled;
                 if(contenu.disabled){
                     //efface le contenu des casques
                     casquesManager.removeContenu(contenu.localFile);
@@ -202,7 +207,7 @@ class Sync extends EventEmitter{
 
     /**
      * La liste des contenus actuelle
-     * @returns {object[]}
+     * @returns {Contenu[]}
      */
     getContenus(){
         return this.data.json.contenus;
@@ -259,6 +264,7 @@ class Sync extends EventEmitter{
      * @param newJson
      */
     setNewJson(newJson){
+        console.log("setNewJson");
         let oldJson=this.data;
         if(!newJson.json){
             console.error("pas de json");
@@ -291,19 +297,10 @@ class Sync extends EventEmitter{
             //sur la régie
             let cellFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
             cellFile.shouldExists=1;
-            /*
-            let exists=0;
-            if(!fs.existsSync(contenu.localFileAbsolute)){
-                exists=-1;
-            }else{
-                exists=1;
-            }
-            cellFile.exists=exists;
-            */
         }
 
-
         //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
+        //todo revoir ça avec la devicesTable
         if(oldJson && oldJson.json && oldJson.json.contenus){
             let newUids=[];
             let oldUids=[];
@@ -323,10 +320,14 @@ class Sync extends EventEmitter{
                     this.emit(window.EVENT_WEB_SYNC_CONTENU_DELETED,contenu);
                 }
             }
-
-
-
         }
+
+        //essaye de faire les taches
+        let me=this;
+        setInterval(function(){
+            me.todoNext();
+        },1000);
+
 
 
 
@@ -351,27 +352,6 @@ class Sync extends EventEmitter{
         }
         return null;
     }
-
-    /**
-     *
-     * @param {string} path le chemin relatif du contenu
-     * @returns {null|ContenuSurCasque}
-     */
-    getContenuByPath(path){
-        /**
-         *
-         * @type {ContenuSurCasque[]}
-         */
-        let contenus=this.data.json.contenus;
-        for(let i = 0;i<contenus.length;i++){
-            let c=contenus[i];
-            if(c.localFile===path){
-                return c;
-            }
-        }
-        return null;
-    }
-
 
     /**
      * Télécharge le json
@@ -470,6 +450,7 @@ class Sync extends EventEmitter{
 
             //dwd thumb
             //contenu.localThumbAbsolute=this.localStoragePath+"/"+contenu.localThumb;
+            /*
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbAbsolute);
             if(!fs.existsSync(contenu.localThumbAbsolute)){
                 let log=ui.log(`Téléchargement de ${contenu.serverThumb} `,true);
@@ -494,6 +475,7 @@ class Sync extends EventEmitter{
                 );
                 return;
             }
+            */
             //dwd thumb no resize
             //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
             FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
@@ -764,6 +746,9 @@ class Sync extends EventEmitter{
         },5*1000);
     }
 
+    /**
+     * si possible lance la prochaine tache à faire
+     */
     todoNext(){
         if(ui.devicesTable.isDoingSomething()){
             //console.log("occupé")
