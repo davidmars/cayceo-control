@@ -289,7 +289,7 @@ class CasqueModel{
     installCurrentApk(){
         let me =this;
         let apk=sync.data.json.casquesapk.localFile;
-
+        me.refreshDisplay();
         me.apkInfos.installation.when=new Date().toLocaleString();
         me.apkInfos.installation.status=`installation de ${apk}`;
         if(!this.plugged){

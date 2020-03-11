@@ -12,6 +12,11 @@ export default class Contenu{
          */
         this.disabled=false;
         /**
+         * Nom du contenu
+         * @type {string}
+         */
+        this.name="";
+        /**
          *
          * @type {boolean}
          */
@@ -53,6 +58,11 @@ export default class Contenu{
          * @type {string}
          */
         this.localThumbNoResize="";
+        /**
+         *
+         * @type {string}
+         */
+        this.serverThumbNoResize="";
         /**
          *
          * @type {string}

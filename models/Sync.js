@@ -94,6 +94,7 @@ class Sync extends EventEmitter{
             me.emit(EVENT_READY);
         });
 
+        //Quand un fichier existe pour sur
         ui.on("EVENT_FILE_EXISTS",
             /** @param {FileCell} deviceFile */
             function(deviceFile){
@@ -101,7 +102,35 @@ class Sync extends EventEmitter{
                     case deviceFile.fileHead().isLogo:
                         me.emit(EVENT_WEB_SYNC_LOGO_READY,machine.appStoragePath+"/"+deviceFile.path);
                         break;
+                    case deviceFile.fileHead().isContenu:
+                    case deviceFile.fileHead().isThumbnail:
+                        if(deviceFile.deviceCol.isRegie()){
+                            me.emit(EVENT_WEB_SYNC_CONTENU_READY,deviceFile.fileHead().contenu)
+                        }
+                }
+            }
+        );
+        ui.on("EVENT_FILE_DELETED",
+            /** @param {FileCell} deviceFile */
+            function(deviceFile){
+                switch (true) {
+                    case deviceFile.fileHead().isContenu:
+                        if(deviceFile.deviceCol.isRegie()) {
+                            me.emit(EVENT_WEB_SYNC_CONTENU_DELETED, deviceFile.fileHead().contenu);
+                        }
+                        break;
+                }
+            }
+        );
+
+        ui.on("EVENT_FILE_EXISTS_NEW",
+            /** @param {FileCell} deviceFile */
+            function(deviceFile){
+                console.warn("Fichier créé",deviceFile);
+                switch (true) {
                     case deviceFile.fileHead().isApk:
+                        alert("new apk");
+                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+deviceFile.path);
                         break;
                 }
                 console.log("EVENT fichier existe",deviceFile.path)
@@ -120,7 +149,7 @@ class Sync extends EventEmitter{
             clearInterval(me._intervalSynchro);
         }
         let delay=me._synchroDelay();
-        //console.log("next sync in "+delay);
+        console.log("next sync in "+delay);
         me._intervalSynchro=setInterval(function(){
             me._recursiveSynchro();
         },delay*1000);
@@ -141,64 +170,7 @@ class Sync extends EventEmitter{
         sec=!sec?61:sec;
         sec=isNaN(sec)?62:sec;
         return sec;
-
     }
-    /**
-     * Applique les chemins locaux absoluts aux urls
-     * Applique les variables
-     * vérifie si les contenus sont ok
-     * @private
-     */
-    _applyLocalAndCheckReady(){
-        console.log("_applyLocalAndCheckReady");
-        let me=this;
-        let apkOk=false;
-        let auMoinsUnContenuOk=false;
-        //refresh
-        me._recursiveSynchro();
-
-
-
-        //logo
-        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.logomachine.localFile);
-        logoRegie.fileHead().serverPath=me.data.json.logomachine.serverFile;
-        logoRegie.fileHead().isLogo=true;
-        logoRegie.exists=fs.existsSync(logo.localPathAboslute)?1:-1;
-
-
-
-        //apk
-        if(me.data.json.casquesapk && me.data.json.casquesapk.localFile) {
-            let apk = me.data.json.casquesapk;
-            apk.localPathAboslute = this.localStoragePath + "/" + apk.localFile;
-            apk.localPathAboslute_downloaded = fs.existsSync(apk.localPathAboslute);
-            apkOk=apk.localPathAboslute_downloaded;
-        }
-        //contenus
-        me.files=[];
-        for(let i=0;i<this.getContenus().length;i++){
-            let c=this.getContenus()[i];
-            //ajoute le gros fichier à télécharger
-            ui.devicesTable.addFile(c.localFile,c.disabled);
-            if(!c.disabled){
-                me.files.push(c.localFile);
-            }
-            c.localFileAbsolute_downloaded=ui.devicesTable.getDeviceFile("régie",c.localFile).exists===1;
-            c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
-            c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
-
-            if(c.localThumbNoResizeAbsolute_downloaded && c.localFileAbsolute_downloaded){
-                c.ready=true;
-                me.emit(EVENT_WEB_SYNC_CONTENU_READY,c);
-                auMoinsUnContenuOk=true;
-            }
-        }
-        if(auMoinsUnContenuOk && apkOk){
-            me.ready=true;
-            me.emit(EVENT_SYNC_READY_TO_DISPLAY);
-        }
-    }
-
     /**
      * Affiche ou masque les contenus dans l'ui
      */
@@ -224,7 +196,9 @@ class Sync extends EventEmitter{
      * Lance une synchronisation web de A à Z
      */
     doIt(){
+
         if(this.syncing){
+            console.log("yet syncing");
             return;
         }
         let me=this;
@@ -243,12 +217,16 @@ class Sync extends EventEmitter{
                         ui.pinCode=json.json.jukebox.pin;
                     }
                     if(json.json.synchroId !== me.synchroId){
-                        me.setNewJson(json);
                         ui.log("Mise à jour du contenu nécessaire");
                     }else{
                         ui.log("Votre contenu est à jour");
                     }
-                    me.dwdNext();
+                    me.setNewJson(json);
+                    me.ready=true;
+                    me.syncing=false;
+                    me.emit(EVENT_WEB_SYNC_UPDATED);
+                    me.emit(EVENT_SYNC_READY_TO_DISPLAY);
+                    me.emit(EVENT_READY);
                 }else{
                     for(let err of json.errors){
                         me.syncing=false;
@@ -272,6 +250,13 @@ class Sync extends EventEmitter{
      */
     setNewJson(newJson){
         console.log("setNewJson");
+        ui.log({"Nouvelle version des contenus à synchroniser":this.data});
+        ui.popIns.webApiData.displayData(newJson);
+        let me=this;
+        /**
+         *
+         * @type {SyncJson}
+         */
         let oldJson=this.data;
         if(!newJson.json){
             console.error("pas de json");
@@ -281,6 +266,7 @@ class Sync extends EventEmitter{
         this.synchroId=newJson.json.synchroId;
         this.data=newJson;
 
+        //prérelease acceptées ou non ?
         if(this.data.json.jukebox.istestmachine===true){
             //console.warn("ALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',true)
@@ -289,55 +275,49 @@ class Sync extends EventEmitter{
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
 
-        this._applyLocalAndCheckReady();
-        ui.log({"Nouvelle version des contenus à synchroniser":this.data});
-        ui.popIns.webApiData.displayData(newJson);
+        //marque tous les  fichiers comme à supprimer (les rétablira ensuite)
+        for(let fileRegie of ui.devicesTable.devicesById["régie"].filesCellsArray()){
+            fileRegie.shouldExists=-1;
+        }
+
+        //référence le logo
+        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.logomachine.localFile);
+        logoRegie.fileHead().serverPath=me.data.json.logomachine.serverFile;
+        logoRegie.fileHead().isLogo=true;
+        logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.data.json.logomachine.localFile)?1:-1;
+
+        //référence l'apk
+        let apkRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.casquesapk.localFile);
+        apkRegie.fileHead().serverPath=me.data.json.casquesapk.serverFile;
+        apkRegie.fileHead().isApk=true;
+        apkRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.data.json.casquesapk.localFile)?1:-1;
+
+        //fichiers contenus...
+        for(let contenu of this.data.json.contenus){
+            //gros fichier
+            let contenuFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
+            contenuFile.fileHead().serverPath=contenu.serverFile;
+            contenuFile.fileHead().contenuName=contenu.name;
+            contenuFile.fileHead().isContenu=true;
+            contenuFile.fileHead().contenu=contenu;
+            contenuFile.shouldExists=1;
+            contenuFile.fileHead().disabled=contenu.disabled;
+            contenuFile.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localFile)?1:-1;
+            //thumbnail
+            let thumbnail=ui.devicesTable.getDeviceFile("régie",contenu.localThumbNoResize);
+            thumbnail.fileHead().serverPath=contenu.serverThumbNoResize;
+            thumbnail.fileHead().isThumbnail=true;
+            thumbnail.fileHead().contenu=contenu;
+            thumbnail.fileHead().contenuName="thumbnail "+contenu.name;
+            thumbnail.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localThumbNoResize)?1:-1;
+        }
 
         //--------------gros fichiers-----------------------
 
-        //va faire un petit tour rapide pour établir la liste de ce qui est là et ce qui l'est pas
-        for(let contenu of this.data.json.contenus){
-            let cellHead=ui.devicesTable.getFileHead(contenu.localFile);
-            cellHead.serverPath=contenu.serverFile;
-            cellHead.contenuName=contenu.name;
-            cellHead.disabled=contenu.disabled;
-            //sur la régie
-            let cellFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
-            cellFile.shouldExists=1;
-        }
-
-        //compare les anciennes et nouvelles données pour voir ce qui a été supprimé
-        //todo revoir ça avec la devicesTable
-        if(oldJson && oldJson.json && oldJson.json.contenus){
-            let newUids=[];
-            let oldUids=[];
-            let i;
-            for(i = 0;i<oldJson.json.contenus.length;i++){
-                oldUids.push(oldJson.json.contenus[i].uid);
-            }
-            for(i = 0;i<newJson.json.contenus.length;i++){
-                newUids.push(newJson.json.contenus[i].uid);
-            }
-            //recherche les contenus supprimés
-            for(i=0;i<oldUids.length;i++){
-                if($.inArray(oldUids[i],newUids) === -1){
-                    let contenu=this.getContenuByUid(oldUids[i],oldJson.json.contenus);
-                    //console.warn("contenu supprimé",contenu);
-                    ui.devicesTable.getDeviceFile("régie",contenu.localFile).shouldExists=-1;
-                    this.emit(window.EVENT_WEB_SYNC_CONTENU_DELETED,contenu);
-                }
-            }
-        }
-
         //essaye de faire les taches
-        let me=this;
         setTimeout(function(){
             me.todoNext();
         },1000);
-
-
-
-
     }
 
 
@@ -385,81 +365,6 @@ class Sync extends EventEmitter{
     }
 
     /**
-     * Télécharge récusivement les éléments à télécharger
-     * @private
-     */
-    dwdNext(){
-        this.emit(EVENT_UPDATING);
-        let me=this;
-
-        //dwd apk
-        if(me.data.json.casquesapk && me.data.json.casquesapk.localFile){
-            let apk=me.data.json.casquesapk;
-            let distApk=apk.serverFile;
-            FileSystemUtils.ensureDirectoryExistence(apk.localPathAboslute);
-            if(!fs.existsSync(apk.localPathAboslute)){
-                let log=ui.log(`Téléchargement APK ${distApk} `);
-                FileSystemUtils.download(
-                    distApk
-                    ,apk.localPathAboslute
-                    ,function(file){
-                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,apk.localPathAboslute);
-                        log.setContent(`Téléchargement vers ${file} terminé :)`);
-                        me.dwdNext();
-                    }
-                    ,function(percent,bytes,total){
-                        log.setContent(`downloading new APK ${percent}%`)
-                    }
-                    ,function (err) {
-                        log.setContent(["error while downloading new APK",err])
-                    }
-                );
-                return;
-            }
-        }
-
-
-
-        //chaque contenu
-        /** @property {ContenuModel} contenu */
-        for(let contenu of me.data.json.contenus){
-            //dwd thumb no resize
-            //contenu.localThumbNoResizeAbsolute=this.localStoragePath+"/"+contenu.localThumbNoResize;
-            FileSystemUtils.ensureDirectoryExistence(contenu.localThumbNoResizeAbsolute);
-            if(!fs.existsSync(contenu.localThumbNoResizeAbsolute)){
-                let log=ui.log(`Téléchargement de ${contenu.serverThumbNoResize} `,true);
-                FileSystemUtils.download(
-                    contenu.serverThumbNoResize
-                    ,contenu.localThumbNoResizeAbsolute
-                    ,function(file){
-                        log.setContent(`Téléchargement vers ${file} terminé :)`)
-                        me.dwdNext();
-                    }
-                    ,function(percent,bytes,total){
-                        log.setContent(`Téléchargement de ${contenu.serverThumbNoResize}  ${percent}%`)
-                    }
-                    ,function (err) {
-                        log.setContent([
-                            "Erreur de téléchargement"
-                            ,contenu.serverThumbNoResize
-                            ,contenu.localThumbNoResizeAbsolute
-                            ,err
-                        ])
-                    }
-                );
-                return;
-            }
-        }
-        me.ready=true;
-        me.syncing=false;
-        me.emit(EVENT_WEB_SYNC_UPDATED);
-        me.emit(EVENT_SYNC_READY_TO_DISPLAY);
-        me.emit(EVENT_READY);
-
-
-    }
-
-    /**
      * Liste tous les fichiers physiques de la régie dans "contenus" et les marque comme existants
      * Marque tous les autres fichiers référencés comme innexistants
      */
@@ -467,41 +372,28 @@ class Sync extends EventEmitter{
         if(ui.devicesTable.isDoingSomething()){
             return;
         }
-        console.log("testFilesExistsRegie");
         let existingFilesAbsolute=FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/contenus");
         existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/logo"));
+        existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/apk"));
+        existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/img"));
         let existingFiles=[];
         for(let f in existingFilesAbsolute){
             let p=existingFilesAbsolute[f].replace(slash(machine.appStoragePath)+"/",'');
             existingFiles.push(p);
         }
-        console.log("existingFiles",existingFiles);
+        //marque les fichiers qui existent
         for(let path in existingFiles){
             ui.devicesTable.getDeviceFile("régie",existingFiles[path]).exists=1;
         }
-
         //marque les fichiers qui n'existent pas
         for(let path in ui.devicesTable.filesHeadCells){
             if(existingFiles.indexOf(path)===-1){
                 let dv=ui.devicesTable.getDeviceFile("régie",path,true);
                 if(dv){
-                    //TODO REMETTRE dv.exists=-1;
+                    dv.exists=-1;
                 }
             }
         }
-        //va marquer les fichiers inconnus comme inutiles
-
-        for(let path in ui.devicesTable.filesHeadCells){
-            if(this.files.indexOf(path)===-1){
-                let dv=ui.devicesTable.getDeviceFile("régie",path,true);
-                if(dv && dv.shouldExists === 0){
-                    //TODO REMETTRE dv.shouldExists=-1;
-                }
-            }
-        }
-
-
-        this._applyLocalAndCheckReady();
     }
 
     /**
@@ -526,6 +418,7 @@ class Sync extends EventEmitter{
                             }
                         }
                     });
+                    //teste l'espace disque
                     adb.diskSpace(casque.deviceId,function(output){
                         casque.diskUsage=output;
                     });
@@ -573,7 +466,13 @@ class Sync extends EventEmitter{
      */
     performToDo(fileCell){
         let me=this;
-        console.warn("DO",fileCell.casque()?"casque":"régie",fileCell.toDo,fileCell.path,fileCell.exists,fileCell.shouldExists);
+        console.warn("DO",
+            fileCell.casque()?"casque":"régie",
+            fileCell.toDo,
+            fileCell.path,
+            fileCell.exists,
+            fileCell.shouldExists
+        );
 
         if(fileCell.deviceCol.casque){
             let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
@@ -640,6 +539,7 @@ class Sync extends EventEmitter{
                     }
                     FileSystemUtils.ensureDirectoryExistence(localPath);
                     if(fs.existsSync(localPath)){
+                        console.log("!!!!!")
                         //ok le fichier existait déjà
                         fileCell.doing=0;
                         fileCell.exists=1;

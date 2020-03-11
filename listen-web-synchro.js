@@ -15,7 +15,7 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,function(contenu){
     let f=ui.films.addFilm(
         contenu.uid,
         contenu.name,
-        contenu.localThumbNoResizeAbsolute,
+        `${machine.appStoragePath}/${contenu.localThumbNoResize}`,
         contenu.localFile,
         contenu.duration,
         contenu.short
@@ -37,22 +37,24 @@ sync.on(EVENT_WEB_SYNC_CONTENU_DELETED,function(contenu){
 sync.on(EVENT_SYNC_NOT_ALLOWED_ERROR,function(err){
     stats.pageView(EVENT_SYNC_NOT_ALLOWED_ERROR);
     document.title=err;
-    started=false;
     ui.log(
         [
             `Erreur de synchronisation`
             ,err
         ],true
     );
-    ui.displaySplashScreen();
+    ui.displaySplashScreen("Machine non autorisée :(");
 });
 sync.on(EVENT_WEB_SYNC_UPDATED,function(){
-    ui.log("Mise à jour réussie");
+    console.warn("Mise à jour réussie");
     stats.pageView(EVENT_WEB_SYNC_UPDATED);
     document.title="Dernière mise à jour: "+new Date().toLocaleTimeString();
     ui.isSyncing=false;
     sync.disableEnableContenus();
     ui.categoriesEnabled=sync.data.json.jukebox.usetags;
+    if(ui.currentScreen===ui.screens.splash){
+        ui.showScreen(ui.screens.home);
+    }
 });
 sync.on(EVENT_UPDATING,function(){
     document.title="Mise à jour en cours...";
