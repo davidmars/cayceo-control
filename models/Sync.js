@@ -63,7 +63,7 @@ class Sync extends EventEmitter{
         /**
          * @private
          * Les données du fichier de synchronisation
-         * @type {{}}
+         * @type {SyncJson}
          */
         this.data={};
 
@@ -93,6 +93,21 @@ class Sync extends EventEmitter{
             me.emit(EVENT_SYNC_READY_TO_DISPLAY);
             me.emit(EVENT_READY);
         });
+
+        ui.on("EVENT_FILE_EXISTS",
+            /** @param {FileCell} deviceFile */
+            function(deviceFile){
+                switch (true) {
+                    case deviceFile.fileHead().isLogo:
+                        me.emit(EVENT_WEB_SYNC_LOGO_READY,machine.appStoragePath+"/"+deviceFile.path);
+                        break;
+                    case deviceFile.fileHead().isApk:
+                        break;
+                }
+                console.log("EVENT fichier existe",deviceFile.path)
+            }
+        );
+
     }
 
     /**
@@ -141,14 +156,17 @@ class Sync extends EventEmitter{
         let auMoinsUnContenuOk=false;
         //refresh
         me._recursiveSynchro();
+
+
+
         //logo
-        let logo=me.data.json.logomachine;
-        logo.localPathAboslute=this.localStoragePath+"/"+ logo.localFile;
-        let logoWasReady=logo.localPathAboslute_downloaded;
-        logo.localPathAboslute_downloaded = fs.existsSync(logo.localPathAboslute);
-        if(!logoWasReady && logo.localPathAboslute_downloaded){
-            me.emit(EVENT_WEB_SYNC_LOGO_READY,logo.localPathAboslute);
-        }
+        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.logomachine.localFile);
+        logoRegie.fileHead().serverPath=me.data.json.logomachine.serverFile;
+        logoRegie.fileHead().isLogo=true;
+        logoRegie.exists=fs.existsSync(logo.localPathAboslute)?1:-1;
+
+
+
         //apk
         if(me.data.json.casquesapk && me.data.json.casquesapk.localFile) {
             let apk = me.data.json.casquesapk;
@@ -160,11 +178,11 @@ class Sync extends EventEmitter{
         me.files=[];
         for(let i=0;i<this.getContenus().length;i++){
             let c=this.getContenus()[i];
+            //ajoute le gros fichier à télécharger
             ui.devicesTable.addFile(c.localFile,c.disabled);
             if(!c.disabled){
                 me.files.push(c.localFile);
             }
-            c.localFileAbsolute=this.localStoragePath+"/"+c.localFile;
             c.localFileAbsolute_downloaded=ui.devicesTable.getDeviceFile("régie",c.localFile).exists===1;
             c.localThumbNoResizeAbsolute=this.localStoragePath+"/"+c.localThumbNoResize;
             c.localThumbNoResizeAbsolute_downloaded=fs.existsSync(c.localThumbNoResizeAbsolute);
@@ -400,34 +418,8 @@ class Sync extends EventEmitter{
             }
         }
 
-        //dwd logo
-        let dist=me.data.json.logomachine.serverFile;
-        FileSystemUtils.ensureDirectoryExistence(me.data.json.logomachine.localPathAboslute);
-        if(!fs.existsSync(me.data.json.logomachine.localPathAboslute)){
-            let log=ui.log(`Téléchargement de ${dist} `,true);
-            FileSystemUtils.download(
-                dist
-                ,me.data.json.logomachine.localPathAboslute
-                ,function(file){
-                    me._applyLocalAndCheckReady();
-                    log.setContent(`Téléchargement vers ${file} terminé :)`)
-                    me.dwdNext();
-                }
-                ,function(percent,bytes,total){
 
-                    log.setContent(`Téléchargement de ${dist}  ${percent}%`)
-                }
-                ,function (err) {
-                    log.setContent([
-                        "Erreur de téléchargement"
-                        ,dist
-                        ,me.data.json.logomachine.localPathAboslute
-                        ,err
-                    ])
-                }
-            );
-            return;
-        }
+
         //chaque contenu
         /** @property {ContenuModel} contenu */
         for(let contenu of me.data.json.contenus){
@@ -477,34 +469,38 @@ class Sync extends EventEmitter{
         }
         console.log("testFilesExistsRegie");
         let existingFilesAbsolute=FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/contenus");
+        existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/logo"));
         let existingFiles=[];
         for(let f in existingFilesAbsolute){
             let p=existingFilesAbsolute[f].replace(slash(machine.appStoragePath)+"/",'');
             existingFiles.push(p);
         }
+        console.log("existingFiles",existingFiles);
         for(let path in existingFiles){
             ui.devicesTable.getDeviceFile("régie",existingFiles[path]).exists=1;
         }
-
 
         //marque les fichiers qui n'existent pas
         for(let path in ui.devicesTable.filesHeadCells){
             if(existingFiles.indexOf(path)===-1){
                 let dv=ui.devicesTable.getDeviceFile("régie",path,true);
                 if(dv){
-                    dv.exists=-1;
+                    //TODO REMETTRE dv.exists=-1;
                 }
             }
         }
         //va marquer les fichiers inconnus comme inutiles
+
         for(let path in ui.devicesTable.filesHeadCells){
             if(this.files.indexOf(path)===-1){
                 let dv=ui.devicesTable.getDeviceFile("régie",path,true);
                 if(dv && dv.shouldExists === 0){
-                    dv.shouldExists=-1;
+                    //TODO REMETTRE dv.shouldExists=-1;
                 }
             }
         }
+
+
         this._applyLocalAndCheckReady();
     }
 
@@ -576,8 +572,8 @@ class Sync extends EventEmitter{
      * @param {FileCell} fileCell
      */
     performToDo(fileCell){
-
         let me=this;
+        console.warn("DO",fileCell.casque()?"casque":"régie",fileCell.toDo,fileCell.path,fileCell.exists,fileCell.shouldExists);
 
         if(fileCell.deviceCol.casque){
             let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
@@ -615,7 +611,8 @@ class Sync extends EventEmitter{
                     break;
             }
         }else{
-            let headFile=ui.devicesTable.getFileHead(fileCell.path);
+            //régie
+            let headFile=fileCell.fileHead();
             let localPath=me.localStoragePath+"/"+fileCell.path;
             switch (fileCell.toDo) {
                 case -1:
@@ -642,7 +639,16 @@ class Sync extends EventEmitter{
                         }
                     }
                     FileSystemUtils.ensureDirectoryExistence(localPath);
-                    if(!fs.existsSync(localPath)){
+                    if(fs.existsSync(localPath)){
+                        //ok le fichier existait déjà
+                        fileCell.doing=0;
+                        fileCell.exists=1;
+                        setTimeout(function(){
+                            ui.layout.setContenuUpdate(null);
+                            me.todoNext();
+                        },1000);
+                        return;
+                    }else{
                         let log=ui.log(`Téléchargement de ${headFile.serverPath} `,true);
                         fileCell.doing=1;
                         FileSystemUtils.download(
@@ -674,6 +680,7 @@ class Sync extends EventEmitter{
                         );
                         return;
                     }
+
             }
         }
 
