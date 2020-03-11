@@ -1,6 +1,11 @@
 export default class Contenu{
     constructor() {
-        alert("la classe contenu n'est que pour la doc")
+        alert("la classe contenu n'est que pour la doc");
+        /**
+         *
+         * @type {string}
+         */
+        this.uid="contenumachine-etc";
         /**
          *
          * @type {boolean}

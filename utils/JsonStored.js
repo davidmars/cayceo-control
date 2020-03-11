@@ -19,7 +19,7 @@ class JsonStored {
     /**
      * Renvoie les valeurs du json et au besoin enregistre une valeur par défaut
      * @param {*} toSaveIfNull Les valeurs à enregistrer si le json n'existe pas
-     * @returns {any}
+     * @returns {*}
      */
     getJson(toSaveIfNull=null){
         let d=JsonStored.storages.getItem(this.jsonPath);
