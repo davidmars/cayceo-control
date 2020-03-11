@@ -18,7 +18,7 @@ class Stats {
 
     pageView(page){
         let url= `${this.machineName}/${page}`;
-        console.log("pageView",url);
+        //console.log("pageView",url);
         this.usr.pageview(
            url,
             this.machineName,
