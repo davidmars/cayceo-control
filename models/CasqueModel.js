@@ -99,6 +99,21 @@ class CasqueModel{
     }
 
     /**
+     * Demande un rapport du l'espace disque
+     * Ne fonctionne que si branché
+     */
+    calculateDiskUsage(){
+        let me=this;
+        if(this.plugged){
+            //teste l'espace disque
+            adb.diskSpace(me.deviceId,function(output){
+                me.diskUsage=output;
+            });
+        }
+
+    }
+
+    /**
      * Un boucle lancée toutes les 10 secondes qui va...
      * Tester la batterie via ADB si jamais on est offline
      * Vérifier que les contenus du casque sont à jour
@@ -125,6 +140,7 @@ class CasqueModel{
         }
         //teste si l'apk est à jour
         me.testAPK();
+        me.calculateDiskUsage();
 
         //teste si les contenus sont à jour
         //me.checkContenusExists();
