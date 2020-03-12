@@ -46,6 +46,8 @@ class FileSystemUtils {
         let timeout = 10000;
         let destTmp=dest+".tmp.dwd";
         let file = fs.createWriteStream(destTmp);
+        let totalSize=0;
+        let dwdSize=0;
         let timeout_wrapper = function( req ) {
             return function() {
                 //console.log('abort');
@@ -60,26 +62,37 @@ class FileSystemUtils {
         }
         let error=false;
         var request = client.get(sourceUrl).on('response', function(res) {
-            let len = parseInt(res.headers['content-length'], 10);
-            let downloaded = 0;
+            totalSize = parseInt(res.headers['content-length'], 10);
+            dwdSize = 0;
 
             res.on('data', function(chunk) {
                 file.write(chunk);
-                downloaded += chunk.length;
-                let percent=(100.0 * downloaded / len).toFixed(2);
-                cbProgress(percent,downloaded,len);
+                dwdSize += chunk.length;
+                let percent=(100.0 * dwdSize / totalSize).toFixed(2);
+                cbProgress(percent,dwdSize,totalSize);
                 // reset timeout
                 clearTimeout( timeoutId );
                 timeoutId = setTimeout( fn, timeout );
             }).on('end', function () {
-                stats.pageView("DWD_FILE/SUCCESS/"+dest);
-                // clear timeout
-                clearTimeout( timeoutId );
-                file.end();
-                if(!error){
-                    fs.renameSync(destTmp,dest);
-                    cbSuccess(dest);
+                if(dwdSize !== totalSize){
+                    let message="longueur de fichier téléchargé problématique "+dwdSize+" / "+totalSize;
+                    console.error(message);
+                    stats.pageView("DWD_FILE/ERROR/"+dest);
+                    // clear timeout
+                    error=true;
+                    clearTimeout( timeoutId );
+                    cbError(message);
+                }else{
+                    stats.pageView("DWD_FILE/SUCCESS/"+dest);
+                    // clear timeout
+                    clearTimeout( timeoutId );
+                    file.end();
+                    if(!error){
+                        fs.renameSync(destTmp,dest);
+                        cbSuccess(dest);
+                    }
                 }
+
             }).on('error', function (err) {
                 stats.pageView("DWD_FILE/ERROR/"+dest);
                 // clear timeout
