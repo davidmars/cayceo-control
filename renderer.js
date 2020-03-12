@@ -100,7 +100,7 @@ machine.on(EVENT_READY,function(){
 
     let displayIp=function(){
         let ips=machine.getIpAdresses();
-        ui.devicesTable.devicesById["régie"].ip=ips;
+        ui.devicesTable.regie().ip=ips;
         ui.log(["ipV4",ips]);
     };
     setInterval(function(){
@@ -120,7 +120,7 @@ machine.on(EVENT_READY,function(){
         }
         if(!wifi.listening ){
             let ips=machine.getIpAdresses();
-            ui.devicesTable.devicesById["régie"].ip=ips;
+            ui.devicesTable.regie().ip=ips;
             ui.log(["ipV4",ips],true);
             ui.log("Waiting for socket...",true);
             return;
@@ -128,8 +128,8 @@ machine.on(EVENT_READY,function(){
 
         if(!started){
             let machineName=machine.name;
-            if(sync.data.json && sync.data.json.jukebox && sync.data.json.jukebox.name){
-                machineName= sync.data.json.jukebox.name;
+            if(sync.getJukebox() && sync.getJukebox().name){
+                machineName= sync.getJukebox().name;
             }
             window.stats.machineName=machineName;
             stats.pageView("BOOT");
@@ -143,18 +143,17 @@ machine.on(EVENT_READY,function(){
         }
     };
     //Quand la synchro a fait tout ce qu'elle avait à faire...
-    sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(err){
-
-        if(sync.data.json.jukebox){
-            this.ui.categoriesEnabled=sync.data.json.jukebox.usetags; //active ou pas les catégories
-            if(sync.data.json.jukebox.name){
-                this.ui.layout.setMachineName(sync.data.json.jukebox.name);
+    sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(){
+        if(sync.getJukebox()){
+            this.ui.categoriesEnabled=sync.getJukebox().usetags; //active ou pas les catégories
+            if(sync.getJukebox().name){
+                this.ui.layout.setMachineName(sync.getJukebox().name);
             }
         }
         startOrNot();
     });
     //Quand le socket est prêt
-    wifi.on(EVENT_READY,function(err){
+    wifi.on(EVENT_READY,function(){
         startOrNot();
     });
 

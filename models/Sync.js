@@ -289,7 +289,7 @@ class Sync extends EventEmitter{
         }
 
         //marque tous les  fichiers comme à supprimer (les rétablira ensuite)
-        for(let fileRegie of ui.devicesTable.devicesById["régie"].filesCellsArray()){
+        for(let fileRegie of ui.devicesTable.regie().filesCellsArray()){
             fileRegie.shouldExists=-1;
         }
 

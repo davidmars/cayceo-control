@@ -24,7 +24,7 @@ class Wifi extends EventEmitter{
             console.error("socket error",e);
             ui.log(["ipV4",ips,true]);
             ui.log(["socket error",e],true);
-            ui.devicesTable.devicesById["régie"].ip=ips;
+            ui.devicesTable.regie().ip=ips;
         });
         http.on('listening', function() {
             ui.log(["listenning socket on",http.address()]);
