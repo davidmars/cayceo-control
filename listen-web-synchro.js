@@ -62,6 +62,14 @@ sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(){
             ui.showScreen(ui.screens.home);
         },3000);
     }
+
+    //le machine name
+    let machineName=machine.name;
+    if(sync.getJukebox() && sync.getJukebox().name){
+        machineName= sync.getJukebox().name;
+    }
+    ui.layout.setMachineName(machineName);
+    window.stats.machineName=machineName;
 });
 
 //-------------------modification de paramètres de la régie-----------------
