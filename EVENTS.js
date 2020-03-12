@@ -4,13 +4,13 @@
  */
 window.EVENT_READY="EVENT_READY";
 /**
- * Quand la synchronisation est suffisant pour afficher l'ui (cependant on peut continuer à télécharger des trucs en tache de fond)
+ * Quand la synchronisation est suffisante pour afficher l'ui (cependant on peut continuer à télécharger des trucs en tache de fond)
  * @type {string}
  */
 window.EVENT_SYNC_READY_TO_DISPLAY="EVENT_SYNC_READY_TO_DISPLAY";
 
 /**
- * Qunad une erreur de réseau survient
+ * Quand une erreur de réseau survient
  * @type {string}
  */
 window.EVENT_NETWORK_ERROR="EVENT_NETWORK_ERROR";
@@ -20,6 +20,11 @@ window.EVENT_NETWORK_ERROR="EVENT_NETWORK_ERROR";
  * @type {string}
  */
 window.EVENT_SYNCING="EVENT_SYNCING";
+/**
+ * Quand une synchronisation WEB n'est plus en cours
+ * @type {string}
+ */
+window.EVENT_SYNCING_FINISHED="EVENT_SYNCING_FINISHED";
 
 /**
  * Quand on détecte qu'on est offline

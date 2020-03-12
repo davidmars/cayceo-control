@@ -16,62 +16,63 @@ class Sync extends EventEmitter{
      * @param {string} syncUrl Url vers le json de synchro
      * @param {Machine} machine La machine dont on déduira pas mal de trucs
      */
-    constructor(syncUrl,machine){
+    constructor(syncUrl,machine) {
         super();
 
-        let me=this;
+        let me = this;
 
         /**
          * Selon si on est online ou pas
          * @type {boolean}
          */
-        this.isOnline=null;
+        this.isOnline = null;
+        /**
+         * Si true on peut afficher les contenus
+         * @type {null|boolean}
+         */
+        this.allowed=null;
 
         /**
          * True si une mise à jour est en cours
          * @type {boolean}
          */
-        this.syncing=false;
-        /**
-         * Quand true c'est qu'on peut commencer à faire qque chose
-         * @type {boolean}
-         */
-        this.ready=false;
+        this.syncing = false;
 
         /**
          * @private
          * @type {string} Répertoire de stockage des fichiers de l'application
          */
-        this.localStoragePath=machine.appStoragePath;
+        this.localStoragePath = machine.appStoragePath;
         /**
          * @private
          * @type {string} Url vers le json de synchro
          */
-        this.syncUrl=syncUrl;
+        this.syncUrl = syncUrl;
         /**
          * @private
          * @type {Machine}
          */
-        this.machine=machine;
+        this.machine = machine;
 
         /**
          * @private
          * Version du contenu enregistrée en local
          * @type {string}
          */
-        this.synchroId="";
+        this.synchroId = "";
 
         /**
          * Les données du fichier de synchronisation
          * @type {SyncJson}
          * @private
          */
-        this._data={};
+        this._data = {};
 
-        this.syncJson=new JsonStored("sync");
-        me._data=this.syncJson.getJson(me._data);
-        console.log("initial data",me._data);
+        this.syncJson = new JsonStored("sync");
+        me._data = this.syncJson.getJson(me._data);
+        console.log("initial data", me._data);
         me._setNewJson(me._data);
+        this._testReadyToDisplay();
 
         //mise à jour programmée
         me._recursiveSynchro();
@@ -79,20 +80,31 @@ class Sync extends EventEmitter{
         //écoute les fichiers
         me._listenFiles();
 
-        //en cas d'erreur réseau
-        // dit qu'on est offline
-        // dit qu'on ne synchronise pas pour relancer une sync un peu plus tard
-        me.on(EVENT_NETWORK_ERROR,function(){
-            if(me.isOnline!==false){
-                me.isOnline=false;
-                me.emit(EVENT_OFFLINE);
-            }
-            me.syncing=false;
+
+        me.on(EVENT_SYNCING, function () {
+            me.syncing = true;
+        });
+        me.on(EVENT_SYNCING_FINISHED, function () {
+            me._testReadyToDisplay();
+            me.syncing = false;
+        });
+        me.on(EVENT_ONLINE, function () {
+            me.isOnline = true;
         });
 
-
+        //en cas d'erreur réseau
+        // dit qu'on est offline si ce n'était pas déjà le cas
+        me.on(EVENT_NETWORK_ERROR, function () {
+            if (me.isOnline !== false) { //si on était pas dejà offline
+                me.emit(EVENT_OFFLINE);
+            }
+        });
+        me.on(EVENT_OFFLINE, function () {
+            me.isOnline = false;
+        });
 
     }
+
 
     /**
      * écoute les evenements de fichiers
@@ -195,19 +207,16 @@ class Sync extends EventEmitter{
      * @private
      */
     _doIt(){
-
         if(this.syncing){
             console.log("yet syncing");
             return;
         }
         let me=this;
-        me.syncing=true;
         me.emit(EVENT_SYNCING);
         this._dwdJson(
             function(json){
                 if(!me.isOnline){
                     me.emit(EVENT_ONLINE);
-                    me.isOnline=true;
                 }
                 if(json.success){
                     //console.log("json",json);
@@ -221,24 +230,42 @@ class Sync extends EventEmitter{
                         ui.log("Votre contenu est à jour");
                     }
                     me._setNewJson(json);
-                    me.ready=true;
-                    me.syncing=false;
                     me.emit(EVENT_WEB_SYNC_UPDATED);
-                    //me.emit(EVENT_SYNC_READY_TO_DISPLAY);
+
                 }else{
+                    me.allowed=false;
                     for(let err of json.errors){
-                        me.syncing=false;
                         me.emit(EVENT_SYNC_NOT_ALLOWED_ERROR,err);
                     }
                 }
+                me.emit(EVENT_SYNCING_FINISHED);
 
             },
             function(){
                 console.error("synchronisation impossible");
                 console.error("impossible de télécharger "+me.syncUrl);
                 me.emit(EVENT_NETWORK_ERROR,"impossible de télécharger "+me.syncUrl);
+                setTimeout(function(){ //laisse le temps d'afficher le bouzin
+                    me.emit(EVENT_SYNCING_FINISHED);
+                },3000);
+
             }
         )
+    }
+
+    /**
+     * Renvoie le SYNC_READY_TO_DISPLAY si toutes les conditions sont requises
+     */
+    _testReadyToDisplay(){
+        if(!this.getContenus()){
+            console.warn("NOT _testReadyToDisplay getContenus()")
+            return;
+        }
+        if(this.allowed!==true){
+            console.warn("NOT _testReadyToDisplay allowed",this.allowed)
+            return;
+        }
+        this.emit(EVENT_SYNC_READY_TO_DISPLAY);
     }
     /**
      * Télécharge le json
@@ -278,6 +305,7 @@ class Sync extends EventEmitter{
         this.syncJson.saveJson(newJson);
         this.synchroId=newJson.json.synchroId;
         this._data=newJson;
+        this.allowed=me.getJukebox().allowed==="1";
 
         //prérelease acceptées ou non ?
         if(this._data.json.jukebox.istestmachine===true){

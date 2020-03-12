@@ -51,13 +51,11 @@ ipcRenderer.on('MAJ done', function(event, text) {
 window.machine=new Machine();
 machine.on(EVENT_READY,function(){
 
-
-
     //pour cayceo on modifie les identifiants
     machine.name=`cayceo ${machine.name}`;
     machine.machineId=`cayceo-${machine.machineId}`;
 
-    //préinitialise les stats
+    //préinitialise les stats (les modifiera ensuite quand on aura le nom de la machine depuis la syncro)
     window.stats=new Stats(
         "UA-126805732-2",
         machine.name
@@ -83,42 +81,36 @@ machine.on(EVENT_READY,function(){
     require("./listen-ui.js");
 
     //synchro web
-    window.sync=new Sync(window.conf.serverRoot+"/povApi/action/jukeboxSync",machine);
+    window.sync=new Sync(
+        window.conf.serverRoot+"/povApi/action/jukeboxSync",
+        machine
+    );
     require("./listen-web-synchro");
 
     //casques
     window.casquesManager=new CasqueModelsManager(machine);
     require("./listen-casques");
-
     window.wifi=new Wifi();
+    //affiche l'ip de la régie dans la devicesTable en boucle
+    let displayIp=function(){ui.devicesTable.regie().ip=machine.getIpAdresses();};
+    setInterval(displayIp,60*1000);
+    displayIp();
 
     //traite les actions induites par ADB
     require("./listen-adb");
 
-
-    //toutes les minutes loggue les ips du pc
-
-    let displayIp=function(){
-        let ips=machine.getIpAdresses();
-        ui.devicesTable.regie().ip=ips;
-        ui.log(["ipV4",ips]);
-    };
-    setInterval(function(){
-        displayIp();
-    },1000*60);
-    displayIp();
-
-
-
+    /*
     let started=false;
     let startOrNot=function(){
-
+        console.log("start or not ?")
         //va sur la home si on a pas démaré l'application
         if(!sync.ready){
+            console.log("start or not ?","not sync not ready")
             ui.log("Waiting for data sync",true);
             return;
         }
         if(!wifi.listening ){
+            console.log("start or not ?","not wifi not listening")
             let ips=machine.getIpAdresses();
             ui.devicesTable.regie().ip=ips;
             ui.log(["ipV4",ips],true);
@@ -137,9 +129,12 @@ machine.on(EVENT_READY,function(){
             setTimeout(function(){
                 ui.screens.home.show();
             },5*1000);
+            console.log("start or not ?","YES !")
 
             sync.loopToDo();
 
+        }else{
+            console.log("start or not ?","YET STARTED !")
         }
     };
     //Quand la synchro a fait tout ce qu'elle avait à faire...
@@ -156,5 +151,6 @@ machine.on(EVENT_READY,function(){
     wifi.on(EVENT_READY,function(){
         startOrNot();
     });
+    */
 
 });
