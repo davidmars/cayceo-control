@@ -22,12 +22,6 @@ window.EVENT_NETWORK_ERROR="EVENT_NETWORK_ERROR";
 window.EVENT_SYNCING="EVENT_SYNCING";
 
 /**
- * Quand une mise à jour est en cours
- * @type {string}
- */
-window.EVENT_UPDATING="EVENT_UPDATING";
-
-/**
  * Quand on détecte qu'on est offline
  * @type {string}
  */

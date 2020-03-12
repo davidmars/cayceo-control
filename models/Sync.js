@@ -60,25 +60,24 @@ class Sync extends EventEmitter{
          * @type {string}
          */
         this.synchroId="";
+
         /**
-         * @private
          * Les données du fichier de synchronisation
          * @type {SyncJson}
+         * @private
          */
-        this.data={};
-
-        /**
-         * Liste des fichiers (bundles) tels qu'ils devraient être référencés sur les casques
-         * @type {string[]}
-         */
-        this.files=[];
+        this._data={};
 
         this.syncJson=new JsonStored("sync");
-        me.data=this.syncJson.getJson(me.data);
-        console.log("initial data",me.data);
-        me.setNewJson(me.data);
+        me._data=this.syncJson.getJson(me._data);
+        console.log("initial data",me._data);
+        me._setNewJson(me._data);
+
         //mise à jour programmée
         me._recursiveSynchro();
+
+        //écoute les fichiers
+        me._listenFiles();
 
         //en cas d'erreur réseau
         // dit qu'on est offline
@@ -89,54 +88,72 @@ class Sync extends EventEmitter{
                 me.emit(EVENT_OFFLINE);
             }
             me.syncing=false;
-            me.ready=true;
-            me.emit(EVENT_SYNC_READY_TO_DISPLAY);
-            me.emit(EVENT_READY);
         });
 
-        //Quand un fichier existe pour sur
+
+
+    }
+
+    /**
+     * écoute les evenements de fichiers
+     * @private
+     */
+    _listenFiles(){
+        let me=this;
+
+
+        //Quand un fichier est signélé comme existant...
         ui.on("EVENT_FILE_EXISTS",
-            /** @param {FileCell} deviceFile */
-            function(deviceFile){
+            /** @param {FileCell} dFile */
+            function(dFile){
                 switch (true) {
-                    case deviceFile.fileHead().isLogo:
-                        me.emit(EVENT_WEB_SYNC_LOGO_READY,machine.appStoragePath+"/"+deviceFile.path);
+
+                    //nouveau logo
+                    case dFile.isLogo():
+                        me.emit(EVENT_WEB_SYNC_LOGO_READY,machine.appStoragePath+"/"+dFile.path);
                         break;
-                    case deviceFile.fileHead().isContenu:
-                    case deviceFile.fileHead().isThumbnail:
-                        if(deviceFile.deviceCol.isRegie()){
-                            me.emit(EVENT_WEB_SYNC_CONTENU_READY,deviceFile.fileHead().contenu)
+
+                    //mise à jour de contenu
+                    case dFile.isContenu():
+                    case dFile.isThumbnail():
+                        if(dFile.isRegie()){
+                            me.emit(EVENT_WEB_SYNC_CONTENU_READY,dFile.contenu())
                         }
+                        if(dFile.isThumbnail){
+                            let film=ui.films.getFilmById(dFile.contenu().uid);
+                            if(film){
+                                film.setImage(machine.appStoragePath+"/"+dFile.contenu().localThumbNoResize);
+                            }
+                        }
+                        break;
                 }
             }
         );
         ui.on("EVENT_FILE_DELETED",
-            /** @param {FileCell} deviceFile */
-            function(deviceFile){
+            /** @param {FileCell} dFile */
+            function(dFile){
                 switch (true) {
-                    case deviceFile.fileHead().isContenu:
-                        if(deviceFile.deviceCol.isRegie()) {
-                            me.emit(EVENT_WEB_SYNC_CONTENU_DELETED, deviceFile.fileHead().contenu);
+                    case dFile.isContenu():
+                        if(dFile.isRegie()) {
+                            me.emit(EVENT_WEB_SYNC_CONTENU_DELETED, dFile.contenu());
                         }
                         break;
                 }
             }
         );
 
+        //fichiers nouvellement créés et téléchargés
         ui.on("EVENT_FILE_EXISTS_NEW",
-            /** @param {FileCell} deviceFile */
-            function(deviceFile){
-                console.warn("Fichier créé",deviceFile);
+            /** @param {FileCell} dFile */
+            function(dFile){
                 switch (true) {
-                    case deviceFile.fileHead().isApk:
+                    case dFile.isApk():
                         alert("new apk");
-                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+deviceFile.path);
+                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+dFile.path);
                         break;
                 }
-                console.log("EVENT fichier existe",deviceFile.path)
             }
         );
-
     }
 
     /**
@@ -148,13 +165,13 @@ class Sync extends EventEmitter{
         if(me._intervalSynchro){
             clearInterval(me._intervalSynchro);
         }
-        let delay=me._synchroDelay();
+        let delay=me._getSynchroDelay();
         console.log("next sync in "+delay);
         me._intervalSynchro=setInterval(function(){
             me._recursiveSynchro();
         },delay*1000);
         //fait le truc
-        this.doIt();
+        this._doIt();
     }
 
     /**
@@ -162,40 +179,22 @@ class Sync extends EventEmitter{
      * @returns {number} secondes (si une erreur devait arriver le temps serait 60)
      * @private
      */
-    _synchroDelay(){
+    _getSynchroDelay(){
         let sec;
-        if(this.data && this.data.json){
-            sec=this.data.json.refreshSeconds;
+        if(this._data && this._data.json){
+            sec=this._data.json.refreshSeconds;
         }
         sec=!sec?61:sec;
         sec=isNaN(sec)?62:sec;
         return sec;
     }
-    /**
-     * Affiche ou masque les contenus dans l'ui
-     */
-    disableEnableContenus(){
-        //masque / affiche les contenus disabled
-        for(let contenu of this.getContenus()){
-            let film=ui.films.getFilmById(contenu.uid);
-            if(film){
-                film.disabled=contenu.disabled;
-            }
-        }
-    }
 
-    /**
-     * La liste des contenus actuelle
-     * @returns {Contenu[]}
-     */
-    getContenus(){
-        return this.data.json.contenus;
-    }
 
     /**
      * Lance une synchronisation web de A à Z
+     * @private
      */
-    doIt(){
+    _doIt(){
 
         if(this.syncing){
             console.log("yet syncing");
@@ -204,7 +203,7 @@ class Sync extends EventEmitter{
         let me=this;
         me.syncing=true;
         me.emit(EVENT_SYNCING);
-        this.dwdJson(
+        this._dwdJson(
             function(json){
                 if(!me.isOnline){
                     me.emit(EVENT_ONLINE);
@@ -221,12 +220,11 @@ class Sync extends EventEmitter{
                     }else{
                         ui.log("Votre contenu est à jour");
                     }
-                    me.setNewJson(json);
+                    me._setNewJson(json);
                     me.ready=true;
                     me.syncing=false;
                     me.emit(EVENT_WEB_SYNC_UPDATED);
-                    me.emit(EVENT_SYNC_READY_TO_DISPLAY);
-                    me.emit(EVENT_READY);
+                    //me.emit(EVENT_SYNC_READY_TO_DISPLAY);
                 }else{
                     for(let err of json.errors){
                         me.syncing=false;
@@ -242,32 +240,47 @@ class Sync extends EventEmitter{
             }
         )
     }
-
+    /**
+     * Télécharge le json
+     * @private
+     * @param successCb
+     * @param errorCb
+     */
+    _dwdJson(successCb, errorCb){
+        let me = this;
+        $.ajax(this.syncUrl,{
+            data:{
+                machinetoken:me.machine.machineId,
+                machinename:me.machine.name,
+                uuid:me.machine.uuid,
+                exeversion:remote.app.getVersion()
+            },
+            success:function(json){
+                successCb(json);
+            },error:function(){
+                errorCb();
+            }
+        })
+    }
     /**
      * Définit un nouveau json et donc nouvelles data et nouvelle version.
      * @private
      * @param newJson
      */
-    setNewJson(newJson){
+    _setNewJson(newJson){
         console.log("setNewJson");
-        ui.log({"Nouvelle version des contenus à synchroniser":this.data});
         ui.popIns.webApiData.displayData(newJson);
         let me=this;
-        /**
-         *
-         * @type {SyncJson}
-         */
-        let oldJson=this.data;
         if(!newJson.json){
             console.error("pas de json");
             return;
         }
         this.syncJson.saveJson(newJson);
         this.synchroId=newJson.json.synchroId;
-        this.data=newJson;
+        this._data=newJson;
 
         //prérelease acceptées ou non ?
-        if(this.data.json.jukebox.istestmachine===true){
+        if(this._data.json.jukebox.istestmachine===true){
             //console.warn("ALLOW_PRE_RELEASE");
             ipcRenderer.send('ALLOW_PRE_RELEASE',true)
         }else{
@@ -281,19 +294,23 @@ class Sync extends EventEmitter{
         }
 
         //référence le logo
-        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.logomachine.localFile);
-        logoRegie.fileHead().serverPath=me.data.json.logomachine.serverFile;
+        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.getLogo().localFile);
+        logoRegie.fileHead().serverPath=me.getLogo().serverFile;
         logoRegie.fileHead().isLogo=true;
-        logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.data.json.logomachine.localFile)?1:-1;
+        logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getLogo().localFile)?1:-1;
 
         //référence l'apk
-        let apkRegie=ui.devicesTable.getDeviceFile("régie",me.data.json.casquesapk.localFile);
-        apkRegie.fileHead().serverPath=me.data.json.casquesapk.serverFile;
+        let apkRegie=ui.devicesTable.getDeviceFile("régie",me.getCasqueApk().localFile);
+        apkRegie.fileHead().serverPath=me.getCasqueApk().serverFile;
         apkRegie.fileHead().isApk=true;
-        apkRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.data.json.casquesapk.localFile)?1:-1;
+        apkRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getCasqueApk().localFile)?1:-1;
 
         //fichiers contenus...
-        for(let contenu of this.data.json.contenus){
+        for(let contenu of this._data.json.contenus){
+            let film=ui.films.getFilmById(contenu.uid);
+            if(film){
+                film.setTitle(contenu.name);
+            }
             //gros fichier
             let contenuFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
             contenuFile.fileHead().serverPath=contenu.serverFile;
@@ -321,48 +338,9 @@ class Sync extends EventEmitter{
     }
 
 
-    /**
-     * Renvoie les données d'un contenu à partir de son uid
-     * @param {string} uid
-     * @param {array} contenus la liste des contenus où chercher
-     * @returns {null|object}
-     */
-    getContenuByUid(uid,contenus=null){
-        if(!contenus){
-            contenus=this.data.json.contenus;
-        }
-        for(let i = 0;i<contenus.length;i++){
-            let c=contenus[i];
-            if(c.uid===uid){
-                return c;
-            }
-        }
-        return null;
-    }
 
-    /**
-     * Télécharge le json
-     * @private
-     * @param successCb
-     * @param errorCb
-     */
-    dwdJson(successCb,errorCb){
-        let me = this;
-        $.ajax(this.syncUrl,{
-            data:{
-                machinetoken:me.machine.machineId,
-                machinename:me.machine.name,
-                uuid:me.machine.uuid,
-                exeversion:remote.app.getVersion()
-            },
-            success:function(data){
-                //console.log(data);
-                successCb(data);
-            },error:function(){
-                errorCb();
-            }
-        })
-    }
+
+    //-------------------task files-------------------------
 
     /**
      * Liste tous les fichiers physiques de la régie dans "contenus" et les marque comme existants
@@ -457,8 +435,6 @@ class Sync extends EventEmitter{
         return null;
 
     }
-
-
 
     /**
      *
@@ -616,6 +592,64 @@ class Sync extends EventEmitter{
         }
     }
 
+
+    //-------------------utils-------------------------
+
+    /**
+     * Affiche ou masque les contenus dans l'ui
+     */
+    disableEnableContenus(){
+        //masque / affiche les contenus disabled
+        for(let contenu of this.getContenus()){
+            let film=ui.films.getFilmById(contenu.uid);
+            if(film){
+                film.disabled=contenu.disabled;
+            }
+        }
+    }
+
+    /**
+     * La liste des contenus actuelle
+     * @returns {Contenu[]}
+     */
+    getContenus(){
+        return this._data.json.contenus;
+    }
+
+    /**
+     * Renvoie les infos sur le jukebox (la régie)
+     */
+    getJukebox(){
+        return this._data.json.jukebox;
+    }
+
+    /**
+     * Les infos sur l'apk
+     */
+    getCasqueApk(){
+        return this._data.json.casquesapk;
+    }
+    getLogo(){
+        return this._data.json.logomachine;
+    }
+    /**
+     * Renvoie les données d'un contenu à partir de son uid
+     * @param {string} uid
+     * @param {array} contenus la liste des contenus où chercher
+     * @returns {null|object}
+     */
+    getContenuByUid(uid,contenus=null){
+        if(!contenus){
+            contenus=this.getContenus();
+        }
+        for(let i = 0;i<contenus.length;i++){
+            let c=contenus[i];
+            if(c.uid===uid){
+                return c;
+            }
+        }
+        return null;
+    }
 
 }
 module.exports = Sync;

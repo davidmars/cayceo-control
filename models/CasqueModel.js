@@ -136,7 +136,7 @@ class CasqueModel{
      * @returns {string|*|boolean}
      */
     isApkOk(){
-        return this.apkInfos.lastApk===sync.data.json.casquesapk.serverFile;
+        return this.apkInfos.lastApk===sync.getCasqueApk().serverFile;
     }
 
     /**
