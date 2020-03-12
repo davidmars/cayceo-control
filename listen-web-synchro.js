@@ -57,11 +57,12 @@ sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(){
     sync.disableEnableContenus();
     ui.categoriesEnabled=sync.getJukebox().usetags;
     //si on est sur le splashscreen va sur la home
-    if(ui.currentScreen===ui.screens.splash){
-        setTimeout(function () {
+
+    setTimeout(function () {
+        if(ui.currentScreen===ui.screens.splash){
             ui.showScreen(ui.screens.home);
-        },3000);
-    }
+        }
+    },3000);
 
     //le machine name
     let machineName=machine.name;

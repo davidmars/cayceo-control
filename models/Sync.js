@@ -127,16 +127,16 @@ class Sync extends EventEmitter{
 
                     //mise à jour de contenu
                     case dFile.isContenu():
-                    case dFile.isThumbnail():
                         if(dFile.isRegie()){
                             me.emit(EVENT_WEB_SYNC_CONTENU_READY,dFile.contenu())
                         }
-                        if(dFile.isThumbnail){
+                        break;
+
+                    case dFile.isThumbnail():
                             let film=ui.films.getFilmById(dFile.contenu().uid);
                             if(film){
                                 film.setImage(machine.appStoragePath+"/"+dFile.contenu().localThumbNoResize);
                             }
-                        }
                         break;
                 }
             }
@@ -424,10 +424,7 @@ class Sync extends EventEmitter{
                             }
                         }
                     });
-                    //teste l'espace disque
-                    adb.diskSpace(casque.deviceId,function(output){
-                        casque.diskUsage=output;
-                    });
+                    casque.calculateDiskUsage();
                 }
             }
         }
