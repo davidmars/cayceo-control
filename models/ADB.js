@@ -6,7 +6,7 @@ class ADB extends EventEmitter{
     constructor(){
         super();
         let me=this;
-        this.client = adb.createClient()
+        this.client = adb.createClient();
         this.client.trackDevices()
             .then(function(tracker) {
                 tracker.on('add', function(device) {
@@ -26,8 +26,37 @@ class ADB extends EventEmitter{
             })
             .catch(function(err) {
                 console.error('ADB Something went wrong:', err.stack)
-            })
+            });
+
+
+        setInterval(function(){
+            me._devices();
+        },5000);
+        me._devices();
+
+
+
     }
+
+    _devices(cb){
+        this.run("adb devices",function(code,str){
+            let regex = /^([A-Z0-9]+)[ ]+device/gm;
+            console.log("YOOOOOO",str);
+            let m;
+            console.log("YOOOOOO2",regex.exec(str));
+            while ((m = regex.exec(str)) !== null) {
+                // This is necessary to avoid infinite loops with zero-width matches
+                if (m.index === regex.lastIndex) {
+                    regex.lastIndex++;
+                }
+                // The result can be accessed through the `m`-variable.
+                m.forEach((match, groupIndex) => {
+                    console.log(`Found match, group ${groupIndex}: ${match}`);
+                });
+            }
+        })
+    }
+
 
     /**
      * Retourne le chemin d'un contenu sur le casque
@@ -156,19 +185,65 @@ class ADB extends EventEmitter{
         });
     }
 
-    run(cmd, onComplete,onProgress,onError) {
-        var spawn = require('child_process').spawn;
+    run(cmd, onCompleteCb,onProgressCb,onErrorCb) {
+        let c_cmd="%c"+cmd;
+        let debug=true;
+
+        let logOnProgress=function(r){
+            console.log(
+                c_cmd+"%c onProgress ",
+                "color: #eee;background-color:#333;",
+                "color: #33F;"
+            );
+            console.log(r);
+        };
+        let logOnComplete=function(code,buffer){
+            console.log(
+                c_cmd+"%c onComplete ",
+                "color: #eee;background-color:#333;",
+                "color: #3F3;"
+            );
+            console.log("code",code);
+            console.log("buffer",buffer);
+        };
+        let logOnError=function(r){
+            console.log(
+                c_cmd+"%c onError ",
+                "color: #eee;background-color:#333;",
+                "color: #f00;"
+            );
+            console.log(r);
+        };
+        let onProgress=function(r){
+            logOnProgress(r);
+            if(onProgressCb){
+                onProgressCb(r);
+            }
+        };
+        let onComplete=function(code,buffer){
+            logOnComplete(code,buffer);
+            if(onCompleteCb){
+                onCompleteCb(code,buffer);
+            }
+        };
+        let onError=function(r){
+            logOnError(r);
+            if(onErrorCb){
+                onErrorCb(r);
+            }
+        };
+
         let exec = require('child_process').exec;
-        var command = exec(cmd);
-        var result = '';
+        let command = exec(cmd);
+        let buffer = '';
         command.stdout.on('data', function(data) {
             if(onProgress){
                 onProgress(data);
             }
-            result += data.toString();
+            buffer += data.toString();
         });
         command.on('close', function(code) {
-            return onComplete(result);
+            return onComplete(code,buffer);
         });
     }
 
