@@ -108,6 +108,7 @@ class CasqueModel{
             //teste l'espace disque
             adb.diskSpace(me.deviceId,function(output){
                 me.diskUsage=output;
+                me.refreshDisplay();
             });
         }
 
@@ -324,7 +325,7 @@ class CasqueModel{
             function(){
                 //enregistre la derniere version de l'APK pour le prochain boot de l'app
                 stats.pageView(`${CMD.CASQUE_INSTALL_APK}/SUCCESS/${apk}/c-${me.ip}`);
-                me.apkInfos.lastApk=sync.data.json.casquesapk.serverFile;
+                me.apkInfos.lastApk=sync.getCasqueApk().serverFile;
                 casquesManager._saveJson();
                 me.apkInfos.installation.when=new Date().toLocaleString();
                 me.apkInfos.installation.status="good !";
