@@ -1,6 +1,8 @@
 const EventEmitter = require("event-emitter-es6");
 const { exec } = require("child_process");
-
+const app = require('electron').remote.app;
+const path = require('path');
+var basepath = app.getAppPath();
 
 class ADB extends EventEmitter{
     constructor(){
@@ -15,11 +17,14 @@ class ADB extends EventEmitter{
 
         let me=this;
 
+        let exe="platform-tools_r28.0.0-windows/platform-tools/adb.exe";
+        let exePath=path.join(app.getAppPath(),exe).replace('\\resources\\app.asar', '');
+        console.error("exePath",exePath);
         /**
          * Chemin vers le programme adb
          * @type {string}
          */
-        this.exe="D:\\github\\cayceo-control\\platform-tools_r28.0.0-windows\\platform-tools\\adb.exe";
+        this.exe=exePath;
         console.log("ADB",this.exe);
         this.run("version");
 
