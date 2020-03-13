@@ -495,6 +495,7 @@ class Sync extends EventEmitter{
                     adb.pushFile(
                         casque.deviceId,
                         fileCell.path,
+
                         function () {
                             fileCell.doing=0;
                             fileCell.exists=1;
@@ -502,12 +503,19 @@ class Sync extends EventEmitter{
                             wifi.askFileList(casque);
                             me.todoNext();
                         },
+
                         function (percent) {
                             fileCell.copyPercent=percent;
-                        }, function (error) {
+                        },
+
+                        function (error) {
                             console.error("error adb push2",error)
                             fileCell.doing=-2;
                             wifi.askFileList(casque);
+                            setTimeout(function(){
+                                fileCell.doing=0;
+                                me.todoNext();
+                            },15000)
                         }
                     );
                     break;
@@ -519,15 +527,22 @@ class Sync extends EventEmitter{
             switch (fileCell.toDo) {
                 case -1:
                     FileSystemUtils.removeFile(localPath,
+
                         function(){
                             fileCell.doing=0;
                             fileCell.exists=-1;
                             ui.log(["Contenu supprimé de la régie",fileCell.path]);
                             me.todoNext();
                         },
+
                         function(){
                             fileCell.doing=-2;
+                            setTimeout(function(){
+                                fileCell.doing=0;
+                                me.todoNext();
+                            },15000)
                         }
+
                     );
                     break;
 
@@ -557,6 +572,7 @@ class Sync extends EventEmitter{
                         FileSystemUtils.download(
                             headFile.serverPath
                             ,localPath
+
                             ,function(file){
                                 ui.layout.setContenuUpdate(`${headFile.contenuName} terminé`);
                                 fileCell.exists=1;
@@ -567,10 +583,12 @@ class Sync extends EventEmitter{
                                 },1000);
                                 log.setContent(`Téléchargement vers ${file} terminé :)`);
                             }
+
                             ,function(percent,bytes,total){
                                 fileCell.copyPercent=percent;
                                 log.setContent(["Téléchargement",headFile.serverPath,percent+"%",FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)]);
                             }
+
                             ,function (err) {
                                 me.emit(EVENT_NETWORK_ERROR);
                                 fileCell.doing=-2;
@@ -578,6 +596,10 @@ class Sync extends EventEmitter{
                                 setTimeout(function(){
                                     ui.layout.setContenuUpdate(null);
                                 },1000);
+                                setTimeout(function(){
+                                    fileCell.doing=0;
+                                    me.todoNext();
+                                },15000);
                                 log.setContent(["Erreur de téléchargement",headFile.serverPath,localPath,err]);
                             }
                         );
