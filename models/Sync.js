@@ -339,6 +339,14 @@ class Sync extends EventEmitter{
             if(film){
                 film.setTitle(contenu.name);
             }
+            //thumbnail
+            let thumbnail=ui.devicesTable.getDeviceFile("régie",contenu.localThumbNoResize);
+            thumbnail.fileHead().serverPath=contenu.serverThumbNoResize;
+            thumbnail.fileHead().isThumbnail=true;
+            thumbnail.fileHead().contenu=contenu;
+            thumbnail.fileHead().contenuName="thumbnail "+contenu.name;
+            thumbnail.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localThumbNoResize)?1:-1;
+
             //gros fichier
             let contenuFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
             contenuFile.fileHead().serverPath=contenu.serverFile;
@@ -348,13 +356,7 @@ class Sync extends EventEmitter{
             contenuFile.shouldExists=1;
             contenuFile.fileHead().disabled=contenu.disabled;
             contenuFile.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localFile)?1:-1;
-            //thumbnail
-            let thumbnail=ui.devicesTable.getDeviceFile("régie",contenu.localThumbNoResize);
-            thumbnail.fileHead().serverPath=contenu.serverThumbNoResize;
-            thumbnail.fileHead().isThumbnail=true;
-            thumbnail.fileHead().contenu=contenu;
-            thumbnail.fileHead().contenuName="thumbnail "+contenu.name;
-            thumbnail.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localThumbNoResize)?1:-1;
+
         }
 
         //--------------gros fichiers-----------------------
@@ -403,7 +405,7 @@ class Sync extends EventEmitter{
     }
 
     /**
-     * Teste via adb si les contenus existent sur le casque
+     * Teste via adb si les contenus existent sur les casques
      */
     testFilesExistCasques(){
         if(ui.devicesTable.isDoingSomething()){
@@ -414,7 +416,7 @@ class Sync extends EventEmitter{
             for(let casque of casquesManager.casquesList()){
                 if(casque.plugged){
                     //console.log("testFilesExistCasques",casque.deviceId,path);
-                    adb.contenuExists(casque.deviceId,path,function(exists){
+                    adb.fileExists(casque.deviceId,path,function(exists){
                         if(exists){
                             ui.devicesTable.getDeviceFile(casque.ip,path).exists=1;
                         }else{
@@ -424,7 +426,7 @@ class Sync extends EventEmitter{
                             }
                         }
                     });
-                    casque.calculateDiskUsage();
+
                 }
             }
         }
@@ -490,7 +492,7 @@ class Sync extends EventEmitter{
 
                 case 1:
                     fileCell.doing=1;
-                    adb.pushContenu2(
+                    adb.pushFile(
                         casque.deviceId,
                         fileCell.path,
                         function () {
@@ -638,7 +640,10 @@ class Sync extends EventEmitter{
      * @returns {Contenu[]}
      */
     getContenus(){
-        return this._data.json.contenus;
+        if(this._data && this._data.json){
+            return this._data.json.contenus;
+        }
+        return [];
     }
 
     /**

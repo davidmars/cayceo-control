@@ -1,59 +1,78 @@
 const EventEmitter = require("event-emitter-es6");
-const adb = require('adbkit');
-const FileSystemUtils = require('../utils/FileSystemUtils');
+const { exec } = require("child_process");
+
 
 class ADB extends EventEmitter{
     constructor(){
         super();
+
+
+        this.defaultLogsFor={
+            pushFile:false,
+            fileExists:false,
+            diskSpace:false,
+        };
+
         let me=this;
-        this.client = adb.createClient();
-        this.client.trackDevices()
-            .then(function(tracker) {
-                tracker.on('add', function(device) {
-                    console.log('ADB Device %s was plugged in', device.id,device);
-                    setTimeout(function(){
-                        me.emit(EVENT_ADB_ADD_DEVICE,device.id);
-                    },1000*5);
 
-                });
-                tracker.on('remove', function(device) {
-                    console.log('ADB Device %s was unplugged', device.id,device)
-                    me.emit(EVENT_ADB_REMOVE_DEVICE,device.id);
-                });
-                tracker.on('end', function() {
-                    console.log('ADB Tracking stopped')
-                });
-            })
-            .catch(function(err) {
-                console.error('ADB Something went wrong:', err.stack)
-            });
+        /**
+         * Chemin vers le programme adb
+         * @type {string}
+         */
+        this.exe="D:\\github\\cayceo-control\\platform-tools_r28.0.0-windows\\platform-tools\\adb.exe";
+        console.log("ADB",this.exe);
+        this.run("version");
 
+        /**
+         * Liste des ids actuellement connectés
+         * @type {String[]}
+         */
+        this.deviceIds=[];
 
+        //test en boucle si un casque est connecté ou non
         setInterval(function(){
-            me._devices();
+           me._testDevices();
         },5000);
-        me._devices();
-
-
+        me._testDevices();
 
     }
 
-    _devices(cb){
-        this.run("adb devices",function(code,str){
-            let regex = /^([A-Z0-9]+)[ ]+device/gm;
-            console.log("YOOOOOO",str);
-            let m;
-            console.log("YOOOOOO2",regex.exec(str));
-            while ((m = regex.exec(str)) !== null) {
-                // This is necessary to avoid infinite loops with zero-width matches
-                if (m.index === regex.lastIndex) {
-                    regex.lastIndex++;
+    _testDevices(){
+        let me=this;
+        this._devices(
+            function(connectedIds){
+                for(let connected of connectedIds){
+                    //console.log("connected "+connected)
+                    if(me.deviceIds.indexOf(connected) === -1){
+                        console.log("vient d'être branché :"+connected)
+                        me.emit(EVENT_ADB_ADD_DEVICE,connected);
+                    }
                 }
-                // The result can be accessed through the `m`-variable.
-                m.forEach((match, groupIndex) => {
-                    console.log(`Found match, group ${groupIndex}: ${match}`);
-                });
+                for(let old of me.deviceIds){
+                    if(connectedIds.indexOf(old) === -1){
+                        console.log("vient d'être DEbranché :"+old)
+                        me.emit(EVENT_ADB_REMOVE_DEVICE,old);
+                    }
+                }
+                me.deviceIds=connectedIds;
             }
+        )
+    }
+
+    /**
+     * Liste les devices et renvoie leurs ids en cb
+     * @param cb
+     * @private
+     */
+    _devices(cb){
+        this.run("devices",function(str){
+            let devicesIds=[];
+            let regex = /^([a-zA-Z0-9]+)\s+device/gm;
+            let arr;
+            while ((arr = regex.exec(str)) !== null) {
+                devicesIds.push(arr[1]);
+            }
+            cb(devicesIds);
         })
     }
 
@@ -75,30 +94,12 @@ class ADB extends EventEmitter{
         return window.machine.appStoragePath+"/"+path;
     }
 
-    /**
-     * Execuste une commande shell adb et renvoie l'output
-     * @param deviceId
-     * @param cmd
-     * @param cb
-     */
-    shell(deviceId,cmd,cb){
-        if(!cb){
-            cb=function(o){
-                console.log(cmd,o);
-            }
-        }
-        this.client.shell(deviceId,cmd)
-            .then(adb.util.readAll)
-            .then(function(output) {
-                output=output.toString().trim();
-
-                cb(output);
-            });
-    }
-
     diskSpace(deviceId,cb){
-        this.shell(deviceId,"df -h "+this.devicePath("."),function(output){
-            const regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
+        if(cb){
+            cb("calculating...");
+        }
+        this.runDevice(deviceId,"shell df -h "+this.devicePath("."),function(output){
+            let regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
             let m;
             let sizes=[];
             while ((m = regex.exec(output)) !== null) {
@@ -109,15 +110,21 @@ class ADB extends EventEmitter{
                 sizes.push(m[1])
             }
             if(sizes.length===3){
-                cb({
-                    "size":sizes[0],
-                    "used":sizes[1],
-                    "available":sizes[2],
-                })
+                if(cb){
+                    cb({
+                        "size":sizes[0],
+                        "used":sizes[1],
+                        "available":sizes[2],
+                    })
+                }
+
             }else{
-                cb(output);
+                if(cb){
+                    cb(output);
+                }
+
             }
-        });
+        },null,null,this.defaultLogsFor.diskSpace);
     }
 
     /**
@@ -127,7 +134,7 @@ class ADB extends EventEmitter{
      * @param cb
      */
     deleteFile(deviceId,file,cb){
-        this.shell(deviceId,"rm "+this.devicePath(file),cb);
+        this.runDevice(deviceId,"shell rm "+this.devicePath(file),cb);
     }
     /**
      * Renvoie l'adresse IP en callback
@@ -135,15 +142,13 @@ class ADB extends EventEmitter{
      * @param cb
      */
     getIp(deviceId,cb){
-        this.shell(deviceId,"ip addr show wlan0",function(o){
-            let regex = /inet ([0-9.]*)/m;
-            let m;
-            if ((m = regex.exec(o)) !== null) {
-                m.forEach((match, groupIndex) => {
-                    let ip=match.replace("inet ","")
-                    cb(ip);
-                    return;
-                });
+        this.runDevice(deviceId,"shell ip addr show wlan0",function(buffer){
+            let regex = /inet\s+([0-9.]*)/gm;
+            console.error(buffer)
+            //console.error(regex.test(buffer))
+            let arr;
+            while ((arr = regex.exec(buffer)) !== null) {
+                cb(arr[1]);
             }
         })
     }
@@ -154,7 +159,7 @@ class ADB extends EventEmitter{
      * @param cb
      */
     getBattery(deviceId,cb){
-        this.shell(deviceId,"dumpsys battery",function(out){
+        this.runDevice(deviceId,"shell dumpsys battery",function(out){
             let regex = /level: ([0-9]*)/m;
             let m;
             if ((m = regex.exec(out)) !== null) {
@@ -174,56 +179,93 @@ class ADB extends EventEmitter{
      * @param filePath
      * @param {function} cb argument true ou false selon si le fichier existe ou non
      */
-    contenuExists(deviceId,filePath,cb){
+    fileExists(deviceId, filePath, cb){
         let file=this.devicePath(filePath);
-        this.shell(deviceId,`ls ${file}`,function(output){
-            if(output===file){
-                cb(true)
-            }else{
-                cb(false);
-            }
-        });
+        this.runDevice(deviceId,`shell ls ${file}`,
+            function(output){cb(true)},
+            null,
+            function(){cb(false)},
+            false);
     }
 
-    run(cmd, onCompleteCb,onProgressCb,onErrorCb) {
-        let c_cmd="%c"+cmd;
+    /**
+     * Execute une commande adb sur un device donné
+     * @param deviceId
+     * @param cmd
+     * @param onCompleteCb
+     * @param onProgressCb
+     * @param onErrorCb
+     * @param {boolean} logs Affiche les logs par defaut ou non
+     */
+    runDevice(deviceId,cmd, onCompleteCb,onProgressCb,onErrorCb,logs){
+        cmd="-s "+deviceId+" "+cmd;
+        this.run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs);
+    }
+
+    /**
+     * Execute une commande adb
+     * @param cmd
+     * @param onCompleteCb
+     * @param onProgressCb
+     * @param onErrorCb
+     * @param {boolean} logs
+     */
+    run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs=true) {
+        let c_cmd="%c adb "+cmd+" ";
         let debug=true;
 
-        let logOnProgress=function(r){
+        if(logs){
             console.log(
-                c_cmd+"%c onProgress ",
+                this.exe+" "+c_cmd+"%c start ",
                 "color: #eee;background-color:#333;",
                 "color: #33F;"
             );
-            console.log(r);
-        };
-        let logOnComplete=function(code,buffer){
-            console.log(
-                c_cmd+"%c onComplete ",
-                "color: #eee;background-color:#333;",
-                "color: #3F3;"
-            );
-            console.log("code",code);
-            console.log("buffer",buffer);
-        };
-        let logOnError=function(r){
-            console.log(
-                c_cmd+"%c onError ",
-                "color: #eee;background-color:#333;",
-                "color: #f00;"
-            );
-            console.log(r);
-        };
+        }
+        let logOnProgress,logOnComplete,logOnError;
+
+        if(logs){
+            logOnProgress=function(r){
+                console.log(
+                    c_cmd+"%c onProgress ",
+                    "color: #eee;background-color:#333;",
+                    "color: #33F;"
+                );
+                console.log(r);
+            };
+            logOnComplete=function(code,buffer){
+                console.log(
+                    c_cmd+"%c onComplete ",
+                    "color: #eee;background-color:#333;",
+                    "color: #3F3;"
+                );
+                console.log("code",code);
+                console.log("buffer",buffer);
+            };
+            logOnError=function(r){
+                console.error(
+                    c_cmd+"%c onError ",
+                    "color: #eee;background-color:#333;",
+                    "color: #f00;"
+                );
+                console.error("logOnError",r);
+            };
+        }else{
+            logOnProgress=logOnComplete=logOnError=function(){};
+        }
+
+
+
+
         let onProgress=function(r){
             logOnProgress(r);
             if(onProgressCb){
                 onProgressCb(r);
             }
         };
-        let onComplete=function(code,buffer){
-            logOnComplete(code,buffer);
+        let onComplete=function(buffer){
+            logOnComplete(buffer);
             if(onCompleteCb){
-                onCompleteCb(code,buffer);
+                onCompleteCb(buffer);
             }
         };
         let onError=function(r){
@@ -233,9 +275,12 @@ class ADB extends EventEmitter{
             }
         };
 
-        let exec = require('child_process').exec;
-        let command = exec(cmd);
+        let command = exec(this.exe+" "+cmd,{shell: true});
         let buffer = '';
+        let bufferError = '';
+        command.stderr.on('data',function(data){
+            bufferError+=data.toString();
+        });
         command.stdout.on('data', function(data) {
             if(onProgress){
                 onProgress(data);
@@ -243,21 +288,26 @@ class ADB extends EventEmitter{
             buffer += data.toString();
         });
         command.on('close', function(code) {
-            return onComplete(code,buffer);
+            if(code){
+                onError("close (code " +code+") "+ bufferError);
+            }else{
+                onComplete(buffer);
+            }
         });
+
     }
 
-    pushContenu2(deviceId,filePath,onComplete,onProgress,onError){
+    pushFile(deviceId, filePath, onComplete, onProgress, onError){
         let me=this;
         let localFile = this.machinePath(filePath);
         let destFile = this.devicePath(filePath);
         let destFileTmp = destFile+".tmp";
-        let cmd="adb -s "+deviceId+" push "+localFile+" "+destFileTmp;
+        let cmd="push "+localFile+" "+destFileTmp;
         //console.log(cmd);
-        this.run(cmd,
+        this.runDevice(deviceId,cmd,
             function(){
                 //renomme le fichier temporaire en nom de fichier normal
-                me.shell(deviceId,`mv -f ${destFileTmp} ${destFile}`
+                me.runDevice(deviceId,`shell mv -f ${destFileTmp} ${destFile}`
                     ,function(){
                         onComplete();
                     }
@@ -275,64 +325,23 @@ class ADB extends EventEmitter{
                 }
                 onProgress(Number(percent));
             },
-            onError
+            onError,
+            me.defaultLogsFor.pushFile
         );
     }
 
 
 
-    /**
-     * Ajoute une contenu sur le device spécifié
-     * @param {string} deviceId
-     * @param {string} filePath Le chemin relatif vers le fichier à copier
-     * @param {function} onComplete
-     * @param {function} onProgress percent,bytes,totalBytes
-     * @param {function} onError
-     */
-    pushContenu(deviceId,filePath,onComplete,onProgress,onError){
-        let me=this;
-        let localFile = this.machinePath(filePath);
-        let destFile = this.devicePath(filePath);
-        let destFileTmp = destFile+".tmp";
-        let fileSize=FileSystemUtils.fileSize(localFile);
 
-        this.client.push(deviceId, localFile,destFileTmp)
-            .then(function (transfer) {
-                return new Promise(function (resolve, reject) {
-                    transfer.on('progress', function (stats) {
-                        let percentage = ( stats.bytesTransferred/fileSize)*99;
-                        onProgress(percentage,stats.bytesTransferred,fileSize);
-                    });
-                    transfer.on('end', function () {
-                        //renomme le fichier temporaire en nom de fichier normal
-                        me.shell(deviceId,`mv -f ${destFileTmp} ${destFile}`
-                            ,function(){
-                                onComplete();
-                                resolve();
-                            }
-                            );
-                    });
-                    transfer.on('error', function(){
-                        console.error("erreur transfer 1 = ",error);
-                        onError();
-                        reject();
-                    })
-                })
-            })
-            .catch(function(error){
-                console.error("erreur transfer 2 = ",error);
-                onError();
-            });
-    }
 
     /**
      * Sort le device de veille
      * @param deviceId
      */
     wakeUp(deviceId){
-        this.shell(
+        this.runDevice(
             deviceId
-            ,"input keyevent KEYCODE_WAKEUP"
+            ,"shell input keyevent KEYCODE_WAKEUP"
             ,function(o){}
             )
     }
@@ -342,7 +351,7 @@ class ADB extends EventEmitter{
      * @param deviceId
      */
     reboot(deviceId){
-        this.client.reboot(deviceId);
+       this.runDevice(deviceId,"reboot");
     }
     /**
      * Eteint le casque
@@ -350,19 +359,24 @@ class ADB extends EventEmitter{
      * @param cb
      */
     shutDown(deviceId,cb){
-        this.shell(deviceId,"reboot -p",cb);
+        this.runDevice(deviceId,"shell reboot -p",cb);
     }
 
+    /**
+     * Installe un APK sur le périphérique et le redémarre
+     * @param deviceId
+     * @param apk
+     * @param onSuccess
+     * @param onError
+     */
     installAPKAndReboot(deviceId,apk,onSuccess,onError){
         let me=this;
-        this.client.install(deviceId,this.machinePath(apk))
-            .then(function() {
-                onSuccess();
-                me.reboot(deviceId)
-            })
-            .catch(function(err) {
-                onError(err);
-            })
+        let cmd="install -r "+this.machinePath(apk);
+        let success=function(){
+            onSuccess();
+            me.reboot(deviceId)
+        };
+        me.runDevice(deviceId,cmd,success,null,onError);
     }
 }
 module.exports = ADB;
