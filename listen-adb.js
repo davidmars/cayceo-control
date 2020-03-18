@@ -14,9 +14,14 @@ adb.on(EVENT_ADB_ADD_DEVICE,function(deviceId){
     let casqueDevice=casquesManager.getByDeviceId(deviceId);
     if(!casqueDevice){
         adb.getIp(deviceId,function(ipString){
-            let casqueModel=casquesManager.addCasque(ipString,deviceId);
-            //le nouveau casque est branché par définition
-            casqueModel.setPlugged(true);
+            if(ipString){
+                let casqueModel=casquesManager.addCasque(ipString,deviceId);
+                //le nouveau casque est branché par définition
+                casqueModel.setPlugged(true);
+            }else{
+                alert("Le casque que vous vennez de connecter n'a pas d'adresse IP.\nVeuillez connecter le casque au réseau WIFI");
+            }
+
         })
     }else{
         //le casque est branché dans tous les cas

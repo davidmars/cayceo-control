@@ -10,7 +10,7 @@ class ADB extends EventEmitter{
 
         this.defaultLogsFor={
             pushFile:false,
-            fileExists:false,
+            fileExists:true,
             diskSpace:false,
         };
 
@@ -132,13 +132,24 @@ class ADB extends EventEmitter{
     }
 
     /**
-     * Eface un fichier
+     * Eface un fichier (si il existe)
      * @param deviceId
-     * @param file
+     * @param {String} file Chemin du fichier
      * @param cb
      */
     deleteFile(deviceId,file,cb){
-        this.runDevice(deviceId,"shell rm "+this.devicePath(file),cb);
+        let me=this;
+        let path=this.devicePath(file);
+        this.fileExists(deviceId,file,function(exists){
+            if(exists){
+                console.error("EXISTE DEJA "+file)
+                me.runDevice(deviceId,"shell rm "+path,cb);
+            }else{
+                console.error("EXISTAIT PAS "+file)
+                cb();
+            }
+        })
+
     }
     /**
      * Renvoie l'adresse IP en callback
@@ -153,7 +164,10 @@ class ADB extends EventEmitter{
             let arr;
             while ((arr = regex.exec(buffer)) !== null) {
                 cb(arr[1]);
+                return;
             }
+            cb(null);
+
         })
     }
 
@@ -186,10 +200,34 @@ class ADB extends EventEmitter{
     fileExists(deviceId, filePath, cb){
         let file=this.devicePath(filePath);
         this.runDevice(deviceId,`shell ls ${file}`,
-            function(output){cb(true)},
+            function(output){
+                if(output.toString().toLowerCase().indexOf('no such file')===-1){
+                    cb(true);
+                }else{
+                    cb(false);
+                }
+
+            },
             null,
-            function(){cb(false)},
-            false);
+            function(){
+                cb(false)
+            },
+
+            this.defaultLogsFor.fileExists
+        );
+        /*
+        let me=this;
+         let path=this.devicePath(file);
+         this.fileExists(deviceId,file,function(exists){
+            if(exists){
+                console.error("EXISTE "+file)
+                me.runDevice(deviceId,"shell rm "+path,cb);
+            }else{
+                console.error("EXISTE PAS "+file)
+                cb();
+            }
+        })
+        */
     }
 
     /**
@@ -222,7 +260,7 @@ class ADB extends EventEmitter{
             console.log(
                 this.exe+" "+c_cmd+"%c start ",
                 "color: #eee;background-color:#333;",
-                "color: #33F;"
+                "color: #99F;background-color:#333;"
             );
         }
         let logOnProgress,logOnComplete,logOnError;
@@ -232,7 +270,7 @@ class ADB extends EventEmitter{
                 console.log(
                     c_cmd+"%c onProgress ",
                     "color: #eee;background-color:#333;",
-                    "color: #33F;"
+                    "color: #99F;background-color:#333;"
                 );
                 console.log(r);
             };
@@ -240,7 +278,7 @@ class ADB extends EventEmitter{
                 console.log(
                     c_cmd+"%c onComplete ",
                     "color: #eee;background-color:#333;",
-                    "color: #3F3;"
+                    "color: #3F3;background-color:#333;"
                 );
                 console.log("code",code);
                 console.log("buffer",buffer);
@@ -249,7 +287,7 @@ class ADB extends EventEmitter{
                 console.error(
                     c_cmd+"%c onError ",
                     "color: #eee;background-color:#333;",
-                    "color: #f00;"
+                    "color: #f00;background-color:#333;"
                 );
                 console.error("logOnError",r);
             };
@@ -266,8 +304,8 @@ class ADB extends EventEmitter{
                 onProgressCb(r);
             }
         };
-        let onComplete=function(buffer){
-            logOnComplete(buffer);
+        let onComplete=function(code,buffer){
+            logOnComplete(code,buffer);
             if(onCompleteCb){
                 onCompleteCb(buffer);
             }
@@ -279,7 +317,7 @@ class ADB extends EventEmitter{
             }
         };
 
-        let command = exec(this.exe+" "+cmd,{shell: true});
+        let command = exec(this.exe+" "+cmd,{shell: true,maxBuffer:1024*1024*32});
         let buffer = '';
         let bufferError = '';
         command.stderr.on('data',function(data){
@@ -295,7 +333,7 @@ class ADB extends EventEmitter{
             if(code){
                 onError("close (code " +code+") "+ bufferError);
             }else{
-                onComplete(buffer);
+                onComplete(code,buffer);
             }
         });
 

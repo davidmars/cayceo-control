@@ -160,8 +160,10 @@ class Sync extends EventEmitter{
             function(dFile){
                 switch (true) {
                     case dFile.isApk():
-                        alert("new apk");
-                        me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+dFile.path);
+                        if(dFile.isRegie()){
+                            alert("new apk");
+                            me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+dFile.path);
+                        }
                         break;
                 }
             }
@@ -479,6 +481,7 @@ class Sync extends EventEmitter{
 
         if(fileCell.deviceCol.casque){
             let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
+
             switch (fileCell.toDo) {
                 case -1:
                     fileCell.doing=-1;
@@ -495,7 +498,6 @@ class Sync extends EventEmitter{
                     adb.pushFile(
                         casque.deviceId,
                         fileCell.path,
-
                         function () {
                             fileCell.doing=0;
                             fileCell.exists=1;
@@ -503,11 +505,9 @@ class Sync extends EventEmitter{
                             wifi.askFileList(casque);
                             me.todoNext();
                         },
-
                         function (percent) {
                             fileCell.copyPercent=percent;
                         },
-
                         function (error) {
                             console.error("error adb push2",error)
                             fileCell.doing=-2;
