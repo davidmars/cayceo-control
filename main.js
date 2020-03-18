@@ -15,18 +15,21 @@ const isDevelopment = process.mainModule.filename.indexOf('app.asar') === -1;
 function createWindow () {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1024,
-    height: 630,
+    show:false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: true
     }
   });
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show()
+  });
+
   mainWindow.setMenuBarVisibility(false);
   if(isDevelopment){
     //déplace la fenetre sur 2 eme écran
     if(electron.screen.getAllDisplays().length>1){
-      mainWindow.setPosition(electron.screen.getAllDisplays()[1].bounds.x,0);
+      mainWindow.setPosition(electron.screen.getAllDisplays()[1].bounds.x,electron.screen.getAllDisplays()[1].bounds.y);
     }
     mainWindow.maximize();
     //mainWindow.setAlwaysOnTop(true, "main-menu");
