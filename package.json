@@ -1,6 +1,6 @@
 {
   "name": "cayceo-control",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "cayceo-ui": "file:../cayceo-ui",
+    "electron-pdf-window": "^1.0.12",
     "electron-updater": "^4.2.4",
     "event-emitter-es6": "^1.1.5",
     "express": "^4.17.1",
@@ -44,6 +45,7 @@
       "asar": true,
       "extraFiles": [
         "platform-tools_r28.0.0-windows/**",
+        "docs/**",
         "jukebox/**/*.html",
         "jukebox/**/*.svg",
         "jukebox/**/*.png",

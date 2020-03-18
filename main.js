@@ -5,6 +5,7 @@ const electron = require('electron');
 const path = require('path');
 const { autoUpdater } = require("electron-updater");
 const {ipcMain} = require('electron');
+const PDFWindow = require('electron-pdf-window')
 
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -65,11 +66,23 @@ function checkUpdate(delaySeconds=60){
     autoUpdater.checkForUpdatesAndNotify();
   },delaySeconds*1000);
 }
+//ouvre le pdf
+ipcMain.on('OPEN_DOC', (event, arg) => {
+  let pdf="docs/Notice_utilisation_IPNEO_Regie_V1.04.pdf";
+  let pdfPath=path.join(app.getAppPath(),pdf).replace('\\resources\\app.asar', '');
+  let winPDF = new BrowserWindow({ width: 800, height: 600 })
+  winPDF.setTitle("Documentation IPNEO")
+  winPDF.maximize();
+  winPDF.setMenuBarVisibility(false);
+  PDFWindow.addSupport(winPDF);
+  winPDF.loadURL(pdfPath);
+});
 
 // Fonction reçue de CMD.INSTALL_AND_REBOOT
 ipcMain.on('INSTALL_AND_REBOOT', (event, arg) => {
   autoUpdater.quitAndInstall();
 });
+
 // Fonction reçue de de la sync web pour autoriser ou non l'installation de pre-releases
 ipcMain.on('ALLOW_PRE_RELEASE', (event, allow) => {
   autoUpdater.allowPrerelease=allow;

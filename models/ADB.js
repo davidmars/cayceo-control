@@ -2,7 +2,6 @@ const EventEmitter = require("event-emitter-es6");
 const { exec } = require("child_process");
 const app = require('electron').remote.app;
 const path = require('path');
-var basepath = app.getAppPath();
 
 class ADB extends EventEmitter{
     constructor(){

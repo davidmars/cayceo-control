@@ -63,6 +63,10 @@ ui.on(CMD.RESET_ALL,function(){
 ui.on(CMD.UPDATE_CONTENT,function(){
     window.sync.doIt();
 });
+//ouvre la doc pdf
+ui.on(CMD.OPEN_DOC,function(){
+    ipcRenderer.send('OPEN_DOC', {});
+});
 
 ui.on(CMD.NEW_SEANCE,function(seance){
 
