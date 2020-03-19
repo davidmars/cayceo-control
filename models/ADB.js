@@ -8,10 +8,22 @@ class ADB extends EventEmitter{
         super();
 
 
+        this.processQueue=[];
+        this.busy=false;
+
         this.defaultLogsFor={
-            pushFile:false,
-            fileExists:true,
-            diskSpace:false,
+            devices:            true,
+            pushFile:           true,
+            fileExists:         true,
+            listFiles:          true,
+            diskSpace:          true,
+            wakeUp:             true,
+            installAPKAndReboot:true,
+            reboot:             true,
+            shutDown:           true,
+            renameFile:         true,
+            getIp:              true,
+            getBattery:         true
         };
 
         let me=this;
@@ -41,207 +53,19 @@ class ADB extends EventEmitter{
 
     }
 
-    _testDevices(){
-        let me=this;
-        this._devices(
-            function(connectedIds){
-                for(let connected of connectedIds){
-                    //console.log("connected "+connected)
-                    if(me.deviceIds.indexOf(connected) === -1){
-                        console.log("vient d'être branché :"+connected)
-                        me.emit(EVENT_ADB_ADD_DEVICE,connected);
-                    }
-                }
-                for(let old of me.deviceIds){
-                    if(connectedIds.indexOf(old) === -1){
-                        console.log("vient d'être DEbranché :"+old)
-                        me.emit(EVENT_ADB_REMOVE_DEVICE,old);
-                    }
-                }
-                me.deviceIds=connectedIds;
-            }
-        )
-    }
-
-    /**
-     * Liste les devices et renvoie leurs ids en cb
-     * @param cb
-     * @private
-     */
-    _devices(cb){
-        this.run("devices",function(str){
-            let devicesIds=[];
-            let regex = /^([a-zA-Z0-9]+)\s+device/gm;
-            let arr;
-            while ((arr = regex.exec(str)) !== null) {
-                devicesIds.push(arr[1]);
-            }
-            cb(devicesIds);
-        })
-    }
-
-
-    /**
-     * Retourne le chemin d'un contenu sur le casque
-     * @param {string} path Le chemin en relatif
-     * @returns {string}
-     */
-    devicePath(path){
-        return '/sdcard/Download/'+path;
-    }
-    /**
-     * Retourne le chemin d'un contenu sur le PC
-     * @param {string} path Le chemin en relatif
-     * @returns {string}
-     */
-    machinePath(path){
-        return window.machine.appStoragePath+"/"+path;
-    }
-
-    diskSpace(deviceId,cb){
-        if(cb){
-            cb("calculating...");
-        }
-        this.runDevice(deviceId,"shell df -h "+this.devicePath("."),function(output){
-            let regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
-            let m;
-            let sizes=[];
-            while ((m = regex.exec(output)) !== null) {
-                // This is necessary to avoid infinite loops with zero-width matches
-                if (m.index === regex.lastIndex) {
-                    regex.lastIndex++;
-                }
-                sizes.push(m[1])
-            }
-            if(sizes.length===3){
-                if(cb){
-                    cb({
-                        "size":sizes[0],
-                        "used":sizes[1],
-                        "available":sizes[2],
-                    })
-                }
-
-            }else{
-                if(cb){
-                    cb(output);
-                }
-
-            }
-        },null,null,this.defaultLogsFor.diskSpace);
-    }
-
-    /**
-     * Eface un fichier (si il existe)
-     * @param deviceId
-     * @param {String} file Chemin du fichier
-     * @param cb
-     */
-    deleteFile(deviceId,file,cb){
-        let me=this;
-        let path=this.devicePath(file);
-        this.fileExists(deviceId,file,function(exists){
-            if(exists){
-                console.error("EXISTE DEJA "+file)
-                me.runDevice(deviceId,"shell rm "+path,cb);
-            }else{
-                console.error("EXISTAIT PAS "+file)
-                cb();
-            }
-        })
-
-    }
-    /**
-     * Renvoie l'adresse IP en callback
-     * @param deviceId
-     * @param cb
-     */
-    getIp(deviceId,cb){
-        this.runDevice(deviceId,"shell ip addr show wlan0",function(buffer){
-            let regex = /inet\s+([0-9.]*)/gm;
-            console.error(buffer)
-            //console.error(regex.test(buffer))
-            let arr;
-            while ((arr = regex.exec(buffer)) !== null) {
-                cb(arr[1]);
-                return;
-            }
-            cb(null);
-
-        })
-    }
-
-    /**
-     * Renvoie le pourcentage de chargement en callback
-     * @param deviceId
-     * @param cb
-     */
-    getBattery(deviceId,cb){
-        this.runDevice(deviceId,"shell dumpsys battery",function(out){
-            let regex = /level: ([0-9]*)/m;
-            let m;
-            if ((m = regex.exec(out)) !== null) {
-                m.forEach((match, groupIndex) => {
-                    cb(match);
-                    return;
-                });
-            }
-        });
-    }
-
-
-
-    /**
-     * Renvoie true si le fichier existe sur le casque
-     * @param deviceId
-     * @param filePath
-     * @param {function} cb argument true ou false selon si le fichier existe ou non
-     */
-    fileExists(deviceId, filePath, cb){
-        let file=this.devicePath(filePath);
-        this.runDevice(deviceId,`shell ls ${file}`,
-            function(output){
-                if(output.toString().toLowerCase().indexOf('no such file')===-1){
-                    cb(true);
-                }else{
-                    cb(false);
-                }
-
-            },
-            null,
-            function(){
-                cb(false)
-            },
-
-            this.defaultLogsFor.fileExists
-        );
-        /*
-        let me=this;
-         let path=this.devicePath(file);
-         this.fileExists(deviceId,file,function(exists){
-            if(exists){
-                console.error("EXISTE "+file)
-                me.runDevice(deviceId,"shell rm "+path,cb);
-            }else{
-                console.error("EXISTE PAS "+file)
-                cb();
-            }
-        })
-        */
-    }
-
     /**
      * Execute une commande adb sur un device donné
-     * @param deviceId
+     * @param {String} deviceId L'identifiant ADB du device
      * @param cmd
      * @param onCompleteCb
      * @param onProgressCb
      * @param onErrorCb
      * @param {boolean} logs Affiche les logs par defaut ou non
+     * @param {boolean} parallel si true le process peut se lancer même si un autre est en cours
      */
-    runDevice(deviceId,cmd, onCompleteCb,onProgressCb,onErrorCb,logs){
+    runDevice(deviceId,cmd, onCompleteCb,onProgressCb,onErrorCb,logs,parallel=false){
         cmd="-s "+deviceId+" "+cmd;
-        this.run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs);
+        this.run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs,parallel);
     }
 
     /**
@@ -251,14 +75,32 @@ class ADB extends EventEmitter{
      * @param onProgressCb
      * @param onErrorCb
      * @param {boolean} logs
+     * @param {boolean} parallel si true le process peut se lancer même si un autre est en cours
      */
-    run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs=true) {
+    run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs=true,parallel=false) {
+        let me=this;
+        if(!parallel){
+            if(me.processQueue.length> 2 ){
+                console.log("ADB run bloqué "+me.processQueue.length+" / "+me.processQueue[0]);
+
+                //si une command eidentique n'est pas dans la file d'attente
+                if(me.processQueue.indexOf(cmd)===-1){
+                    me.processQueue.push(cmd);
+                }
+                setTimeout(function(){
+                    //me.processQueue.shift()
+                    me.run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs,parallel);
+                },500);
+
+                return;
+            }
+        }
+
         let c_cmd="%c adb "+cmd+" ";
-        let debug=true;
 
         if(logs){
             console.log(
-                this.exe+" "+c_cmd+"%c start ",
+                this.exe+" "+c_cmd+"%c start ("+me.processQueue.length+")",
                 "color: #eee;background-color:#333;",
                 "color: #99F;background-color:#333;"
             );
@@ -295,9 +137,6 @@ class ADB extends EventEmitter{
             logOnProgress=logOnComplete=logOnError=function(){};
         }
 
-
-
-
         let onProgress=function(r){
             logOnProgress(r);
             if(onProgressCb){
@@ -318,6 +157,9 @@ class ADB extends EventEmitter{
         };
 
         let command = exec(this.exe+" "+cmd,{shell: true,maxBuffer:1024*1024*32});
+        if(!parallel){
+            me.busy=true;
+        }
         let buffer = '';
         let bufferError = '';
         command.stderr.on('data',function(data){
@@ -330,6 +172,11 @@ class ADB extends EventEmitter{
             buffer += data.toString();
         });
         command.on('close', function(code) {
+
+            if(!parallel){
+                me.busy=false;
+                me.processQueue.shift();
+            }
             if(code){
                 onError("close (code " +code+") "+ bufferError);
             }else{
@@ -339,36 +186,266 @@ class ADB extends EventEmitter{
 
     }
 
+    /**
+     * envoie les events EVENT_ADB_ADD_DEVICE et EVENT_ADB_REMOVE_DEVICE
+     * fait la comparaison entre ce qu'on avait déjà et ce qui a changé
+     * @private
+     */
+    _testDevices(){
+        let me=this;
+        let manageDeviceIds=function(connectedIds){
+            for(let connected of connectedIds){
+                //console.log("connected "+connected)
+                if(me.deviceIds.indexOf(connected) === -1){
+                    console.log("vient d'être branché :"+connected)
+                    me.emit(EVENT_ADB_ADD_DEVICE,connected);
+                }
+            }
+            for(let old of me.deviceIds){
+                if(connectedIds.indexOf(old) === -1){
+                    console.log("vient d'être DEbranché :"+old)
+                    me.emit(EVENT_ADB_REMOVE_DEVICE,old);
+                }
+            }
+            me.deviceIds=connectedIds;
+        };
+        this.devices(manageDeviceIds);
+    }
+
+    /**
+     * Liste les devices et renvoie leurs ids en cb
+     * @param cb
+     * @private
+     */
+    devices(cb){
+        this.run("devices",function(str){
+            let devicesIds=[];
+            let regex = /^([a-zA-Z0-9]+)\s+device/gm;
+            let arr;
+            while ((arr = regex.exec(str)) !== null) {
+                devicesIds.push(arr[1]);
+            }
+            cb(devicesIds);
+        },
+            null,
+            null,
+            this.defaultLogsFor.devices,
+            true
+        )
+    }
+
+
+    /**
+     * Renvoie l'espace total, l'espace utilisé et l'espace libre
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param cb
+     */
+    diskSpace(deviceId,cb){
+        if(cb){
+            cb("calculating...");
+        }
+        this.runDevice(deviceId,"shell df -h "+this.devicePath("."),function(output){
+            let regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
+            let m;
+            let sizes=[];
+            while ((m = regex.exec(output)) !== null) {
+                // This is necessary to avoid infinite loops with zero-width matches
+                if (m.index === regex.lastIndex) {
+                    regex.lastIndex++;
+                }
+                sizes.push(m[1])
+            }
+            if(sizes.length===3){
+                if(cb){
+                    cb({
+                        "size":sizes[0],
+                        "used":sizes[1],
+                        "available":sizes[2],
+                    })
+                }
+
+            }else{
+                if(cb){
+                    cb(output);
+                }
+
+            }
+        },null,null,this.defaultLogsFor.diskSpace);
+    }
+
+    /**
+     * Efface un fichier (si il existe)
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param {String} file Chemin du fichier
+     * @param cb
+     */
+    deleteFile(deviceId,file,cb){
+        let me=this;
+        let path=this.devicePath(file);
+        this.fileExists(deviceId,file,function(exists){
+            if(exists){
+                console.error("EXISTE DEJA "+file)
+                me.runDevice(deviceId,"shell rm "+path,cb);
+            }else{
+                console.error("EXISTAIT PAS "+file)
+                cb();
+            }
+        })
+
+    }
+    /**
+     * Renvoie l'adresse IP en callback
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param cb
+     */
+    getIp(deviceId,cb){
+        this.runDevice(deviceId,"shell ip addr show wlan0",function(buffer){
+            let regex = /inet\s+([0-9.]*)/gm;
+            console.error(buffer)
+            let arr;
+            while ((arr = regex.exec(buffer)) !== null) {
+                cb(arr[1]);
+                return;
+            }
+            cb(null);
+
+        },null,null,this.defaultLogsFor.getIp,true)
+    }
+
+    /**
+     * Renvoie le pourcentage de chargement en callback
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param cb
+     */
+    getBattery(deviceId,cb){
+        let onComplete=function(out){
+            let regex = /level: ([0-9]*)/m;
+            let m;
+            if ((m = regex.exec(out)) !== null) {
+                m.forEach((match, groupIndex) => {
+                    cb(match);
+                    return;
+                });
+            }
+        };
+        this.runDevice(deviceId,"shell dumpsys battery",
+            onComplete,
+            null,
+            null,
+            this.defaultLogsFor.getBattery,
+            false
+        );
+    }
+
+
+
+    /**
+     * Renvoie true si le fichier existe sur le casque
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param filePath
+     * @param {function} cb argument true ou false selon si le fichier existe ou non
+     */
+    fileExists(deviceId, filePath, cb){
+        let file=this.devicePath(filePath);
+        let onComplete=function(output){
+            if(output.toString().toLowerCase().indexOf('no such file')===-1){
+                cb(true);
+            }else{
+                cb(false);
+            }
+        };
+        let onError=function(){
+            cb(false)
+        };
+        this.runDevice(deviceId,`shell ls ${file}`,
+            onComplete,
+            null,
+            onError,
+            this.defaultLogsFor.fileExists
+        );
+    }
+
+    /**
+     * Liste les fichiers dans download et le renvoie en callback
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param cb
+     */
+    listFiles(deviceId,cb){
+        let cmd="shell find /sdcard/Download -type f";
+        let _done=function(str){
+            let files=[];
+            let regex = /sdcard\/Download\/(.*)/gm;
+            let arr;
+            while ((arr = regex.exec(str)) !== null) {
+                files.push(arr[1]);
+            }
+            console.log("files",files);
+            if(cb){
+                cb(files);
+            }
+        };
+        this.runDevice(deviceId,cmd,
+            _done,
+            null,
+            null,
+            this.defaultLogsFor.listFiles,
+            false
+        );
+    }
+
+    /**
+     * Rennome un fichier
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param oldName
+     * @param newName
+     * @param onComplete
+     * @param onProgress
+     * @param onError
+     */
+    renameFile(deviceId,oldName,newName,onComplete, onProgress, onError){
+        let me=this;
+        me.runDevice(deviceId,`shell mv -f ${oldName} ${newName}`
+            ,onComplete,onProgress,onError,me.defaultLogsFor.renameFile,false
+        );
+    }
+
+    /**
+     * Copie un fichier de la régie vers un casque
+     * @param {String} deviceId L'identifiant ADB du device
+     * @param filePath
+     * @param onComplete
+     * @param onProgress
+     * @param onError
+     */
     pushFile(deviceId, filePath, onComplete, onProgress, onError){
         let me=this;
         let localFile = this.machinePath(filePath);
         let destFile = this.devicePath(filePath);
         let destFileTmp = destFile+".tmp";
         let cmd="push "+localFile+" "+destFileTmp;
-        //console.log(cmd);
+
+        let _onProgress=function(d){
+            let percent=0;
+            let regex = /([0-9]*)%/gm;
+            let arr = regex.exec(d);
+            console.log(d);
+            console.log(arr);
+            if(arr){
+                percent=arr[1];
+                console.log(percent);
+            }
+            onProgress(Number(percent));
+        };
+        let _onComplete=function(){
+            //renomme le fichier temporaire en nom de fichier normal
+            me.renameFile(deviceId,destFileTmp,destFile,onComplete,null,onError);
+        };
         this.runDevice(deviceId,cmd,
-            function(){
-                //renomme le fichier temporaire en nom de fichier normal
-                me.runDevice(deviceId,`shell mv -f ${destFileTmp} ${destFile}`
-                    ,function(){
-                        onComplete();
-                    }
-                );
-            },
-            function(d){
-                //console.log(d);
-                let percent=0;
-                let regex = /([0-9]*)%/gm;
-                let arr = regex.exec(d);
-                //console.log(arr);
-                if(arr){
-                    percent=arr[1];
-                    //console.log(percent);
-                }
-                onProgress(Number(percent));
-            },
+            _onComplete,
+            _onProgress,
             onError,
-            me.defaultLogsFor.pushFile
+            me.defaultLogsFor.pushFile,
+            false
         );
     }
 
@@ -378,30 +455,45 @@ class ADB extends EventEmitter{
 
     /**
      * Sort le device de veille
-     * @param deviceId
+     * @param {String} deviceId L'identifiant ADB du device
      */
     wakeUp(deviceId){
         this.runDevice(
             deviceId
             ,"shell input keyevent KEYCODE_WAKEUP"
-            ,function(o){}
+            ,null,
+            null,
+            null,
+            this.defaultLogsFor.wakeUp,
+            true
             )
     }
 
     /**
      * Reboote le casque
-     * @param deviceId
+     * @param {String} deviceId L'identifiant ADB du device
      */
     reboot(deviceId){
-       this.runDevice(deviceId,"reboot");
+       this.runDevice(deviceId,"reboot",
+           null,
+           null,
+           null,
+           this.defaultLogsFor.reboot,
+           true
+       );
     }
     /**
      * Eteint le casque
-     * @param deviceId
+     * @param {String} deviceId L'identifiant ADB du device
      * @param cb
      */
     shutDown(deviceId,cb){
-        this.runDevice(deviceId,"shell reboot -p",cb);
+        this.runDevice(deviceId,"shell reboot -p",
+            cb,null,
+            null,
+            this.defaultLogsFor.shutDown,
+            true
+        );
     }
 
     /**
@@ -418,7 +510,36 @@ class ADB extends EventEmitter{
             onSuccess();
             me.reboot(deviceId)
         };
-        me.runDevice(deviceId,cmd,success,null,onError);
+        me.runDevice(
+            deviceId,cmd,
+            success,
+            null,
+            onError,
+            this.defaultLogsFor.installAPKAndReboot,
+            true
+        );
     }
+
+
+    /**
+     * Retourne le chemin d'un contenu sur le casque
+     * @param {string} path Le chemin en relatif
+     * @returns {string}
+     */
+    devicePath(path){
+        return '/sdcard/Download/'+path;
+    }
+    /**
+     * Retourne le chemin d'un contenu sur le PC
+     * @param {string} path Le chemin en relatif
+     * @returns {string}
+     */
+    machinePath(path){
+        return window.machine.appStoragePath+"/"+path;
+    }
+
+
+
+
 }
 module.exports = ADB;

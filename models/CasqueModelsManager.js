@@ -41,6 +41,19 @@ class CasqueModelsManager extends EventEmitter{
     casquesList(){
         return this._casques;
     }
+    /**
+     * Renvoie uniquement les casque branchés
+     * @returns {CasqueModel[]}
+     */
+    casquesListPlugged(){
+        let r=[];
+        for (let c of this.casquesList()){
+            if(c.plugged){
+                r.push(c);
+            }
+        }
+        return r;
+    }
 
     /**
      * Renvoie un json avec les infos des casques qui vont bien

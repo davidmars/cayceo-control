@@ -103,6 +103,8 @@ class Sync extends EventEmitter{
             me.isOnline = false;
         });
 
+        this.loopToDo();
+
     }
 
 
@@ -414,23 +416,22 @@ class Sync extends EventEmitter{
             return;
         }
         console.log("testFilesExistCasques");
-        for(let path in ui.devicesTable.filesHeadCells){
-            for(let casque of casquesManager.casquesList()){
-                if(casque.plugged){
-                    //console.log("testFilesExistCasques",casque.deviceId,path);
-                    adb.fileExists(casque.deviceId,path,function(exists){
-                        if(exists){
-                            ui.devicesTable.getDeviceFile(casque.ip,path).exists=1;
-                        }else{
-                            let df=ui.devicesTable.getDeviceFile(casque.ip,path,true)
-                            if(df){
-                                df.exists=-1;
-                            }
-                        }
-                    });
-
+        //pour chaque casque branché
+        for(let casque of casquesManager.casquesListPlugged()){
+            adb.listFiles(casque.deviceId,function(files){
+                if(files.length){
+                    //pour chaque fichier référencé...
+                    //marque tous les fichiers comme innexistants pour ce casque
+                    for(let path in ui.devicesTable.filesHeadCells){
+                        ui.devicesTable.getDeviceFile(casque.ip,path).exists=-1;
+                    }
+                    //marque comme existants ceux qu'on a reçu via ADB
+                    for (let existing of files){
+                        ui.devicesTable.getDeviceFile(casque.ip,existing).exists=1;
+                    }
                 }
             }
+            );
         }
     }
 
@@ -618,8 +619,9 @@ class Sync extends EventEmitter{
             return;
         }
         this.loopToDo_interval=setInterval(function(){
+            me.testFilesExistCasques();
             me.todoNext();
-        },60*1000);
+        },3*60*1000);
     }
 
     /**
@@ -631,7 +633,7 @@ class Sync extends EventEmitter{
             console.log("occupé")
             return;
         }
-        this.testFilesExistCasques();
+
         this.testFilesExistsRegie();
         let taskToDo=sync.getNextToDo();
         if(taskToDo){
