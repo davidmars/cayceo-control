@@ -113,6 +113,19 @@ class CasqueModel{
         }
 
     }
+    /**
+     * Demande la vraie ip au casque via ADB
+     * Ne fonctionne que si branché
+     */
+    displayRealIp(){
+        let me=this;
+        if(this.plugged){
+            adb.getIp(me.deviceId,function(output){
+                ui.devicesTable.devicesById[me.ip].realip=output;
+            });
+        }
+
+    }
 
     /**
      * Un boucle lancée toutes les 10 secondes qui va...
@@ -142,9 +155,7 @@ class CasqueModel{
         //teste si l'apk est à jour
         me.testAPK();
         me.calculateDiskUsage();
-
-        //teste si les contenus sont à jour
-        //me.checkContenusExists();
+        me.displayRealIp();
 
     }
 

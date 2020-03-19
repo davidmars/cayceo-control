@@ -5,6 +5,20 @@ window.adb=new ADB();
  * Ecoute les évênements ADB et réagit en fonction
  */
 
+adb.on(EVENT_ADB_DEVICES,function(str){
+    ui.devicesTable.logDevices(str);
+    for(let deviceCol of ui.devicesTable.devicesArray()){
+        deviceCol.adbstatus="ADB status ???";
+    }
+    for(let deviceId in adb.devicesIdsStatus){
+        let status=adb.devicesIdsStatus[deviceId];
+        let casque=casquesManager.getByDeviceId(deviceId);
+        if(casque){
+            ui.devicesTable.devicesById[casque.ip].adbstatus=status;
+        }
+    }
+});
+
 /**
  * Quand un périphérique est connecté,
  * le rajoute à la liste des casques (si il n'y est pas déjà)

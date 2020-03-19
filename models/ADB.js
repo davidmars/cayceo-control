@@ -44,6 +44,7 @@ class ADB extends EventEmitter{
          * @type {String[]}
          */
         this.deviceIds=[];
+        this.devicesIdsStatus={}
 
         //test en boucle si un casque est connecté ou non
         setInterval(function(){
@@ -218,14 +219,20 @@ class ADB extends EventEmitter{
      * @private
      */
     devices(cb){
+        let me=this;
         this.run("devices",function(str){
-            let devicesIds=[];
-            let regex = /^([a-zA-Z0-9]+)\s+device/gm;
+            let connectedIds=[];
+            me.devicesIdsStatus={};
+            let regex = /^([A-Z0-9]+)\s+([A-Za-z ]+)$/gm;
             let arr;
             while ((arr = regex.exec(str)) !== null) {
-                devicesIds.push(arr[1]);
+                if(String(arr[2])==="device"){
+                    connectedIds.push(arr[1]);
+                }
+                me.devicesIdsStatus[arr[1]] = arr[2];
             }
-            cb(devicesIds);
+            me.emit(EVENT_ADB_DEVICES,str);
+            cb(connectedIds);
         },
             null,
             null,

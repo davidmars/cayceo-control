@@ -66,7 +66,11 @@ window.EVENT_WEB_SYNC_NEW_APK_AVAILABLE="EVENT_WEB_SYNC_NEW_APK_AVAILABLE";
  * @type {string}
  */
 window.EVENT_WEB_SYNC_UPDATED="EVENT_WEB_SYNC_UPDATED";
-
+/**
+ * Renvoie les logs bruttes des devices
+ * @type {string}
+ */
+window.EVENT_ADB_DEVICES="EVENT_ADB_DEVICES";
 /**
  * Quand un périphérique se connecte en ADB, le paramètre est le deviceId
  * @type {string}
