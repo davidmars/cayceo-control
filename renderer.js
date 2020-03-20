@@ -91,66 +91,29 @@ machine.on(EVENT_READY,function(){
     window.casquesManager=new CasqueModelsManager(machine);
     require("./listen-casques");
     window.wifi=new Wifi();
+
     //affiche l'ip de la régie dans la devicesTable en boucle
-    let displayIp=function(){ui.devicesTable.regie().ip=machine.getIpAdresses();};
-    setInterval(displayIp,60*1000);
+    let displayIp=function(){
+        ui.devicesTable.regie().ip=machine.getIpAdresses();
+    };
+    let displayDiskSpace=function(){
+        machine.getDiskSpace(
+            function(data){
+                ui.devicesTable.regie().diskSpace=data
+            }
+        );
+    };
+    setInterval(
+        function(){
+            displayIp();
+            displayDiskSpace();
+        },
+        60*1000);
     displayIp();
+    displayDiskSpace();
 
     //traite les actions induites par ADB
     require("./listen-adb");
 
-    /*
-    let started=false;
-    let startOrNot=function(){
-        console.log("start or not ?")
-        //va sur la home si on a pas démaré l'application
-        if(!sync.ready){
-            console.log("start or not ?","not sync not ready")
-            ui.log("Waiting for data sync",true);
-            return;
-        }
-        if(!wifi.listening ){
-            console.log("start or not ?","not wifi not listening")
-            let ips=machine.getIpAdresses();
-            ui.devicesTable.regie().ip=ips;
-            ui.log(["ipV4",ips],true);
-            ui.log("Waiting for socket...",true);
-            return;
-        }
-
-        if(!started){
-            let machineName=machine.name;
-            if(sync.getJukebox() && sync.getJukebox().name){
-                machineName= sync.getJukebox().name;
-            }
-            window.stats.machineName=machineName;
-            stats.pageView("BOOT");
-            started=true;
-            setTimeout(function(){
-                ui.screens.home.show();
-            },5*1000);
-            console.log("start or not ?","YES !")
-
-            sync.loopToDo();
-
-        }else{
-            console.log("start or not ?","YET STARTED !")
-        }
-    };
-    //Quand la synchro a fait tout ce qu'elle avait à faire...
-    sync.on(EVENT_SYNC_READY_TO_DISPLAY,function(){
-        if(sync.getJukebox()){
-            this.ui.categoriesEnabled=sync.getJukebox().usetags; //active ou pas les catégories
-            if(sync.getJukebox().name){
-                this.ui.layout.setMachineName(sync.getJukebox().name);
-            }
-        }
-        startOrNot();
-    });
-    //Quand le socket est prêt
-    wifi.on(EVENT_READY,function(){
-        startOrNot();
-    });
-    */
 
 });

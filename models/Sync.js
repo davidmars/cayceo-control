@@ -564,6 +564,7 @@ class Sync extends EventEmitter{
                         fileCell.exists=1;
                         setTimeout(function(){
                             ui.layout.setContenuUpdate(null);
+                            me.testFilesExistCasques();
                             me.todoNext();
                         },1000);
                         return;
@@ -580,6 +581,7 @@ class Sync extends EventEmitter{
                                 fileCell.doing=0;
                                 setTimeout(function(){
                                     ui.layout.setContenuUpdate(null);
+                                    me.testFilesExistCasques();
                                     me.todoNext();
                                 },1000);
                                 log.setContent(`Téléchargement vers ${file} terminé :)`);
@@ -639,7 +641,7 @@ class Sync extends EventEmitter{
         if(taskToDo){
             sync.performToDo(taskToDo);
         }else{
-            //console.log("rien à faire")
+            console.log("rien à faire")
         }
     }
 

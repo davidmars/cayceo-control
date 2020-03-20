@@ -4,6 +4,8 @@ const FileSystemUtils = require('./FileSystemUtils');
 const EventEmitter = require("event-emitter-es6");
 const uuid = require('uuid/v4');
 const JsonStored=require("./JsonStored");
+const checkDiskSpace = require('check-disk-space');
+const DiskSpace =             require('./DiskSpace.js');
 
 /**
  * Permet d'obtenir l'adresse MAC et le nom de l'ordi
@@ -66,15 +68,26 @@ class Machine extends EventEmitter{
     getIpAdresses(){
         let interfaces = os.networkInterfaces();
         let addresses = [];
-        for (var k in interfaces) {
-            for (var k2 in interfaces[k]) {
-                var address = interfaces[k][k2];
+        for (let k in interfaces) {
+            for (let k2 in interfaces[k]) {
+                let address = interfaces[k][k2];
                 if (address.family === 'IPv4' && !address.internal) {
                     addresses.push(address.address);
                 }
             }
         }
         return addresses;
+    }
+    getDiskSpace(cb){
+        // On Windows
+        checkDiskSpace(this.appStoragePath).then((diskSpace) => {
+            console.log("diskSpace",diskSpace);
+            let ds=new DiskSpace();
+            ds.availableBytes=diskSpace.free;
+            ds.sizeBytes=diskSpace.size;
+            ds.usedBytes=diskSpace.size-diskSpace.free;
+            cb(ds);
+        })
     }
 }
 module.exports = Machine;

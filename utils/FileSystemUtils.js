@@ -1,9 +1,9 @@
 const http = require('http');
-var https = require('https');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const rimraf = require('rimraf');
-var glob = require("glob");
+const glob = require("glob");
 
 /**
  * Methodes utilitaires pour le système de fichier

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "cayceo-ui": "file:../cayceo-ui",
+    "check-disk-space": "^2.1.0",
     "electron-pdf-window": "^1.0.12",
     "electron-updater": "^4.2.4",
     "event-emitter-es6": "^1.1.5",

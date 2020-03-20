@@ -1,6 +1,7 @@
 const CasqueApkInfos=require("./casqueExtensions/CasqueApkInfos.js");
 const CasqueNowPlaying=require("./casqueExtensions/CasqueNowPlaying.js");
 const CasqueContenusSynchro=require("./casqueExtensions/CasqueContenusSynchro.js");
+const DiskSpace=require("../utils/DiskSpace");
 /**
  * C'est la représentation des données propres à un casque
  */
@@ -116,7 +117,20 @@ class CasqueModel{
             //teste l'espace disque
             adb.diskSpace(me.deviceId,function(output){
                 me.diskUsage=output;
-                me.deviceColumn().diskSpace=output;
+
+                let ds=new DiskSpace();
+                ds.available=output.available;
+                ds.size=output.size;
+                ds.used=output.used;
+                ds.label="";
+                if(ds.availableBytes<4*1024*1024*1024){
+                    ds.label="warning";
+                }
+                if(ds.availableBytes<1*1024*1024*1024){
+                    ds.label="error";
+                }
+
+                me.deviceColumn().diskSpace=ds;
                 me.refreshDisplay();
             });
         }
