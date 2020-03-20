@@ -61,6 +61,20 @@ class ADB extends EventEmitter{
     }
 
     /**
+     * Tue le serveur ADB
+     * @param cb
+     */
+    killServer(cb){
+        this.run(
+            "kill-server",
+            cb,
+            null,
+            null,
+            this.defaultLogsFor.killServer,
+            true
+        );
+    }
+    /**
      * Execute une commande adb sur un device donné
      * @param {String} deviceId L'identifiant ADB du device
      * @param cmd
@@ -449,11 +463,11 @@ class ADB extends EventEmitter{
             let percent=0;
             let regex = /([0-9]*)%/gm;
             let arr = regex.exec(d);
-            console.log(d);
-            console.log(arr);
+            //console.log(d);
+            //console.log(arr);
             if(arr){
                 percent=arr[1];
-                console.log(percent);
+                //console.log(percent);
             }
             onProgress(Number(percent));
         };
