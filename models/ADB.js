@@ -7,23 +7,28 @@ class ADB extends EventEmitter{
     constructor(){
         super();
 
-
         this.processQueue=[];
-        this.busy=false;
-
+        /**
+         * Définit ce qui doit être loggé ou non
+         */
         this.defaultLogsFor={
-            devices:            true,
+            devices:            false,
+
+            diskSpace:          true,
+            getIp:              true,
+            getBattery:         true,
+
             pushFile:           true,
+            renameFile:         true,
             fileExists:         true,
             listFiles:          true,
-            diskSpace:          true,
-            wakeUp:             true,
+
             installAPKAndReboot:true,
             reboot:             true,
             shutDown:           true,
-            renameFile:         true,
-            getIp:              true,
-            getBattery:         true
+            wakeUp:             true,
+
+
         };
 
         let me=this;
@@ -251,7 +256,8 @@ class ADB extends EventEmitter{
         if(cb){
             cb("calculating...");
         }
-        this.runDevice(deviceId,"shell df -h "+this.devicePath("."),function(output){
+        let cmd="shell df -h "+this.devicePath(".");
+        let _done=function(output){
             let regex = /[ ]+([0-9\.]+[A-Z]+)/gm;
             let m;
             let sizes=[];
@@ -277,7 +283,16 @@ class ADB extends EventEmitter{
                 }
 
             }
-        },null,null,this.defaultLogsFor.diskSpace);
+        };
+
+        this.runDevice(
+            deviceId,
+            cmd,
+            _done,
+            null,
+            null,
+            this.defaultLogsFor.diskSpace
+        );
     }
 
     /**
@@ -308,7 +323,6 @@ class ADB extends EventEmitter{
     getIp(deviceId,cb){
         this.runDevice(deviceId,"shell ip addr show wlan0",function(buffer){
             let regex = /inet\s+([0-9.]*)/gm;
-            console.error(buffer)
             let arr;
             while ((arr = regex.exec(buffer)) !== null) {
                 cb(arr[1]);
