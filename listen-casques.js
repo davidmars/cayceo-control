@@ -33,8 +33,9 @@ casquesManager.on(EVENT_CASQUE_PLUGGED,
 casquesManager.on(EVENT_CASQUE_UNPLUGGED,
     /** @param {CasqueModel} casque */
     function(casque){
-    ui.devicesTable.devicesById[casque.ip].resetDoings();
-});
+        casque.deviceColumn().resetDoings();
+    }
+);
 
 
 

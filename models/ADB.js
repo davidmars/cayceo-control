@@ -14,19 +14,20 @@ class ADB extends EventEmitter{
         this.defaultLogsFor={
             devices:            false,
 
-            diskSpace:          true,
-            getIp:              true,
+            diskSpace:          false,
+            getIp:              false,
             getBattery:         true,
 
-            pushFile:           true,
+            pushFile:           false,
             renameFile:         true,
             fileExists:         true,
-            listFiles:          true,
+            listFiles:          false,
 
             installAPKAndReboot:true,
             reboot:             true,
             shutDown:           true,
             wakeUp:             true,
+            killServer:         true,
 
 
         };
@@ -284,7 +285,6 @@ class ADB extends EventEmitter{
 
             }
         };
-
         this.runDevice(
             deviceId,
             cmd,
@@ -400,7 +400,7 @@ class ADB extends EventEmitter{
             while ((arr = regex.exec(str)) !== null) {
                 files.push(arr[1]);
             }
-            console.log("files",files);
+            //console.log("files",files);
             if(cb){
                 cb(files);
             }

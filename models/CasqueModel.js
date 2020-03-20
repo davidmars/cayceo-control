@@ -99,6 +99,14 @@ class CasqueModel{
     }
 
     /**
+     * Renvoie la colonne du casque dans la DeviceTable
+     * @return {DeviceCol}
+     */
+    deviceColumn(){
+        return ui.devicesTable.devicesById[this.ip];
+    }
+
+    /**
      * Demande un rapport du l'espace disque
      * Ne fonctionne que si branché
      */
@@ -108,6 +116,7 @@ class CasqueModel{
             //teste l'espace disque
             adb.diskSpace(me.deviceId,function(output){
                 me.diskUsage=output;
+                me.deviceColumn().diskSpace=output;
                 me.refreshDisplay();
             });
         }
@@ -121,10 +130,9 @@ class CasqueModel{
         let me=this;
         if(this.plugged){
             adb.getIp(me.deviceId,function(output){
-                ui.devicesTable.devicesById[me.ip].realip=output;
+                me.deviceColumn().realip=output;
             });
         }
-
     }
 
     /**
