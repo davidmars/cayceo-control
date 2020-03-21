@@ -249,7 +249,10 @@ class CasqueModel{
             this._batteryLevel=json.batterylevel;
         }
         //apk
-        this.apkInfos.version=json.apkVersion;
+        this.apkInfos.version
+            = this.deviceColumn().apkVersion
+            = json.apkVersion;
+
 
         //fichiers
         for(let f of json.fileList){
