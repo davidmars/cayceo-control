@@ -107,11 +107,11 @@ class DiskSpace {
         return bytes.toFixed(1)+''+units[u];
     }
     bytesFileSize(string){
-        let regex = /([0-9]+)\.([0-9]+)([A-za-z])/;
+        let regex = /([\d.]+)([A-Za-z])/;
         let r=regex.exec(string);
         if(r){
-            let base=Number(r[1]+"."+r[2]);
-            switch (r[3]) {
+            let base=Number(r[1]);
+            switch (r[2]) {
                 case "G":
                     return Math.round(base*1024*1024*1024);
                 case "M":

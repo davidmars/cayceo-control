@@ -21,7 +21,7 @@ class ADB extends EventEmitter{
             pushFile:           false,
             renameFile:         true,
             fileExists:         true,
-            listFiles:          false,
+            listFiles:          true,
 
             installAPKAndReboot:true,
             reboot:             true,

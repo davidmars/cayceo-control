@@ -363,8 +363,6 @@ class Sync extends EventEmitter{
 
         }
 
-        //--------------gros fichiers-----------------------
-
         //essaye de faire les taches
         setTimeout(function(){
             me.todoNext();
@@ -436,7 +434,7 @@ class Sync extends EventEmitter{
     }
 
     /**
-     *
+     * Renvoie la prochaine tache à faire si il y en a une
      * @returns {null|FileCell}
      */
     getNextToDo(){
@@ -450,13 +448,22 @@ class Sync extends EventEmitter{
             if(device.isUsable()){ //est branché
                 for(let path in device.filesCells){
                     let fc=device.filesCells[path];
-                    if(fc.toDo===-1){
+                    if(fc.doing===-2 && fc.errorsTry > 0){
+                        fc.errorsTry--;
+                        if(fc.errorsTry<=0){
+                            fc.doing=0;
+                        }
+                    }
+                }
+                for(let path in device.filesCells){
+                    let fc=device.filesCells[path];
+                    if(fc.toDo===-1 && fc.doing===0){
                         return fc;
                     }
                 }
                 for(let path in device.filesCells){
                     let fc=device.filesCells[path];
-                    if(fc.toDo===1){
+                    if(fc.toDo===1 && fc.doing===0){
                         return fc;
                     }
                 }
@@ -467,11 +474,10 @@ class Sync extends EventEmitter{
     }
 
     /**
-     *
+     * Effectue ce qui doit être fait sur une fileCell donnée
      * @param {FileCell} fileCell
      */
     performToDo(fileCell){
-        let me=this;
         console.warn("DO",
             fileCell.casque()?"casque":"régie",
             fileCell.toDo,
@@ -479,140 +485,169 @@ class Sync extends EventEmitter{
             fileCell.exists,
             fileCell.shouldExists
         );
-
-        if(fileCell.deviceCol.casque){
-            let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
-
-            switch (fileCell.toDo) {
-                case -1:
-                    fileCell.doing=-1;
-                    adb.deleteFile(casque.deviceId,fileCell.path,function(){
-                        fileCell.doing=0;
-                        fileCell.exists=-1;
-                        wifi.askFileList(casque);
-                        me.todoNext();
-                    });
-                    break;
-
-                case 1:
-                    fileCell.doing=1;
-                    adb.pushFile(
-                        casque.deviceId,
-                        fileCell.path,
-                        function () {
-                            fileCell.doing=0;
-                            fileCell.exists=1;
-                            fileCell.copyPercent=100;
-                            wifi.askFileList(casque);
-                            me.todoNext();
-                        },
-                        function (percent) {
-                            fileCell.copyPercent=percent;
-                        },
-                        function (error) {
-                            console.error("error adb push2",error)
-                            fileCell.doing=-2;
-                            wifi.askFileList(casque);
-                            setTimeout(function(){
-                                fileCell.doing=0;
-                                me.todoNext();
-                            },15000)
-                        }
-                    );
-                    break;
-            }
+        if(fileCell.isCasque()){
+            this._performToDoCasque(fileCell);
         }else{
-            //régie
-            let headFile=fileCell.fileHead();
-            let localPath=me.localStoragePath+"/"+fileCell.path;
-            switch (fileCell.toDo) {
-                case -1:
-                    FileSystemUtils.removeFile(localPath,
-
-                        function(){
-                            fileCell.doing=0;
-                            fileCell.exists=-1;
-                            ui.log(["Contenu supprimé de la régie",fileCell.path]);
-                            me.todoNext();
-                        },
-
-                        function(){
-                            fileCell.doing=-2;
-                            setTimeout(function(){
-                                fileCell.doing=0;
-                                me.todoNext();
-                            },15000)
-                        }
-
-                    );
-                    break;
-
-                case 1:
-                    //dwd le gros fichier
-                    if(!headFile){
-                        console.error("headFile introuvable",fileCell.path)
-                    }else{
-                        if(!headFile.serverPath){
-                            console.error("headFile serverPath introuvable",fileCell.path,headFile)
-                        }
-                    }
-                    FileSystemUtils.ensureDirectoryExistence(localPath);
-                    if(fs.existsSync(localPath)){
-                        console.log("!!!!!")
-                        //ok le fichier existait déjà
-                        fileCell.doing=0;
-                        fileCell.exists=1;
-                        setTimeout(function(){
-                            ui.layout.setContenuUpdate(null);
-                            me.testFilesExistCasques();
-                            me.todoNext();
-                        },1000);
-                        return;
-                    }else{
-                        let log=ui.log(`Téléchargement de ${headFile.serverPath} `,true);
-                        fileCell.doing=1;
-                        FileSystemUtils.download(
-                            headFile.serverPath
-                            ,localPath
-
-                            ,function(file){
-                                ui.layout.setContenuUpdate(`${headFile.contenuName} terminé`);
-                                fileCell.exists=1;
-                                fileCell.doing=0;
-                                setTimeout(function(){
-                                    ui.layout.setContenuUpdate(null);
-                                    me.testFilesExistCasques();
-                                    me.todoNext();
-                                },1000);
-                                log.setContent(`Téléchargement vers ${file} terminé :)`);
-                            }
-
-                            ,function(percent,bytes,total){
-                                fileCell.copyPercent=percent;
-                                log.setContent(["Téléchargement",headFile.serverPath,percent+"%",FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)]);
-                            }
-
-                            ,function (err) {
-                                me.emit(EVENT_NETWORK_ERROR);
-                                fileCell.doing=-2;
-                                ui.layout.setContenuUpdate(`${headFile.contenuName} error`);
-                                setTimeout(function(){
-                                    ui.layout.setContenuUpdate(null);
-                                },1000);
-                                setTimeout(function(){
-                                    fileCell.doing=0;
-                                    me.todoNext();
-                                },15000);
-                                log.setContent(["Erreur de téléchargement",headFile.serverPath,localPath,err]);
-                            }
-                        );
-                        return;
-                    }
-
-            }
+            this._performToDoRegie(fileCell);
         }
 
 
+    }
+
+    /**
+     * Effectue ce qui doit être fait sur une fileCell donnée
+     * @param {FileCell} fileCell
+     */
+    _performToDoCasque(fileCell){
+        let me=this;
+        let casque=casquesManager.getByIp(fileCell.deviceCol.casque.ip);
+
+        switch (fileCell.toDo) {
+            //effacer le fichier
+            case -1:
+                fileCell.doing=-1;
+                let _deleteOk=function(){
+                    fileCell.doing=0;
+                    fileCell.exists=-1;
+                    wifi.askFileList(casque);
+                    me.testFilesExistCasques();
+                    me.todoNext();
+                };
+                adb.deleteFile(
+                    casque.deviceId,
+                    fileCell.path,
+                    _deleteOk
+                );
+                break;
+
+            //copier le fichier
+            case 1:
+                fileCell.doing=1;
+
+                let _copyOk=function(){
+                    fileCell.doing=0;
+                    fileCell.exists=1;
+                    fileCell.copyPercent=100;
+                    me.testFilesExistCasques();
+                    wifi.askFileList(casque);
+                    me.todoNext();
+                };
+                let _copyProgress=function(percent){
+                    fileCell.copyPercent=percent;
+                };
+                let _copyError=function(error){
+                    console.error("error adb push",error)
+                    fileCell.doing=-2;
+                    fileCell.errorsTry=Math.floor(10+Math.random()*10); //resetera en aléatoire pour permettre un mêlange
+                    wifi.askFileList(casque);
+                    me.testFilesExistCasques();
+                    me.testFilesExistCasques();
+                    me.todoNext();
+                };
+                adb.pushFile(
+                    casque.deviceId,
+                    fileCell.path,
+                    _copyOk,
+                    _copyProgress,
+                    _copyError
+                );
+                break;
+        }
+    }
+    /**
+     * Effectue ce qui doit être fait sur une fileCell donnée
+     * @param {FileCell} fileCell
+     */
+    _performToDoRegie(fileCell){
+        let me=this;
+        //régie
+        let headFile=fileCell.fileHead();
+        let localPath=me.localStoragePath+"/"+fileCell.path;
+        switch (fileCell.toDo) {
+            case -1:
+                FileSystemUtils.removeFile(localPath,
+
+                    function(){
+                        fileCell.doing=0;
+                        fileCell.exists=-1;
+                        ui.log(["Contenu supprimé de la régie",fileCell.path]);
+                        me.todoNext();
+                    },
+
+                    function(){
+                        fileCell.doing=-2;
+                        setTimeout(function(){
+                            fileCell.doing=0;
+                            me.todoNext();
+                        },15000)
+                    }
+
+                );
+                break;
+
+            case 1:
+                //dwd le gros fichier
+                if(!headFile){
+                    console.error("headFile introuvable",fileCell.path)
+                }else{
+                    if(!headFile.serverPath){
+                        console.error("headFile serverPath introuvable",fileCell.path,headFile)
+                    }
+                }
+                FileSystemUtils.ensureDirectoryExistence(localPath);
+                if(fs.existsSync(localPath)){
+                    console.log("!!!!!")
+                    //ok le fichier existait déjà
+                    fileCell.doing=0;
+                    fileCell.exists=1;
+                    setTimeout(function(){
+                        ui.layout.setContenuUpdate(null);
+                        me.testFilesExistCasques();
+                        me.todoNext();
+                    },1000);
+                    return;
+                }else{
+                    let log=ui.log(`Téléchargement de ${headFile.serverPath} `,true);
+                    fileCell.doing=1;
+                    FileSystemUtils.download(
+                        headFile.serverPath
+                        ,localPath
+
+                        ,function(file){
+                            ui.layout.setContenuUpdate(`${headFile.contenuName} terminé`);
+                            fileCell.exists=1;
+                            fileCell.doing=0;
+                            setTimeout(function(){
+                                ui.layout.setContenuUpdate(null);
+                                me.testFilesExistCasques();
+                                me.todoNext();
+                            },1000);
+                            log.setContent(`Téléchargement vers ${file} terminé :)`);
+                        }
+
+                        ,function(percent,bytes,total){
+                            fileCell.copyPercent=percent;
+                            log.setContent(["Téléchargement",headFile.serverPath,percent+"%",FileSystemUtils.humanFileSize(bytes)+" / "+FileSystemUtils.humanFileSize(total)]);
+                        }
+
+                        ,function (err) {
+                            me.emit(EVENT_NETWORK_ERROR);
+                            fileCell.doing=-2;
+                            ui.layout.setContenuUpdate(`${headFile.contenuName} error`);
+                            setTimeout(function(){
+                                ui.layout.setContenuUpdate(null);
+                            },1000);
+                            setTimeout(function(){
+                                fileCell.doing=0;
+                                me.todoNext();
+                            },15000);
+                            log.setContent(["Erreur de téléchargement",headFile.serverPath,localPath,err]);
+                        }
+                    );
+                    return;
+                }
+
+        }
     }
 
     loopToDo(){
