@@ -50,6 +50,16 @@ export default class SyncJson{
                  */
                 "localFile": "logo/etc...jpg"
             },
+            "modeemploi": {
+                /**
+                 * Chemin serveur du mode d'emploi
+                 */
+                "serverFile": "http://etc...",
+                /**
+                 * Chemin local du mode d'emploi
+                 */
+                "localFile": "doc/etc...pdf"
+            },
             "casquesapk": {
                 /**
                  * Chemin serveur de l'apk

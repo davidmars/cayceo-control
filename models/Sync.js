@@ -127,6 +127,11 @@ class Sync extends EventEmitter{
                         me.emit(EVENT_WEB_SYNC_LOGO_READY,machine.appStoragePath+"/"+dFile.path);
                         break;
 
+                    //nouveau mode emploi
+                    case dFile.isModeEmploi():
+                        me.emit(EVENT_WEB_SYNC_MODE_EMPLOI_READY,machine.appStoragePath+"/"+dFile.path);
+                        break;
+
                     //mise à jour de contenu
                     case dFile.isContenu():
                         if(dFile.isRegie()){
@@ -331,6 +336,15 @@ class Sync extends EventEmitter{
         logoRegie.fileHead().isLogo=true;
         logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getLogo().localFile)?1:-1;
 
+
+        //référence le mode d'emploi
+        if(me.getModeEmploi().localFile){
+            let modeEmploi=ui.devicesTable.getDeviceFile("régie",me.getModeEmploi().localFile);
+            modeEmploi.fileHead().serverPath=me.getModeEmploi().serverFile;
+            modeEmploi.fileHead().isModeEmploi=true;
+            modeEmploi.exists=fs.existsSync(machine.appStoragePath+"/"+me.getModeEmploi().localFile)?1:-1;
+        }
+
         //référence l'apk
         let apkRegie=ui.devicesTable.getDeviceFile("régie",me.getCasqueApk().localFile);
         apkRegie.fileHead().serverPath=me.getCasqueApk().serverFile;
@@ -386,6 +400,7 @@ class Sync extends EventEmitter{
         existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/logo"));
         existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/apk"));
         existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/img"));
+        existingFilesAbsolute=existingFilesAbsolute.concat(FileSystemUtils.getFilesRecursive(machine.appStoragePath+"/doc"));
         let existingFiles=[];
         for(let f in existingFilesAbsolute){
             let p=existingFilesAbsolute[f].replace(slash(machine.appStoragePath)+"/",'');
@@ -722,6 +737,9 @@ class Sync extends EventEmitter{
     }
     getLogo(){
         return this._data.json.logomachine;
+    }
+    getModeEmploi(){
+        return this._data.json.modeemploi;
     }
     /**
      * Renvoie les données d'un contenu à partir de son uid

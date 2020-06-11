@@ -77,7 +77,7 @@ ui.on(CMD.UPDATE_CONTENT,function(){
 });
 //ouvre la doc pdf
 ui.on(CMD.OPEN_DOC,function(){
-    ipcRenderer.send('OPEN_DOC', {});
+    ipcRenderer.send('OPEN_DOC', machine.appStoragePath+"/"+sync.getModeEmploi().localFile);
 });
 
 ui.on(CMD.NEW_SEANCE,function(seance){

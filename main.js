@@ -67,15 +67,13 @@ function checkUpdate(delaySeconds=60){
   },delaySeconds*1000);
 }
 //ouvre le pdf
-ipcMain.on('OPEN_DOC', (event, arg) => {
-  let pdf="docs/Notice_utilisation_IPNEO_Regie_V1.04.pdf";
-  let pdfPath=path.join(app.getAppPath(),pdf).replace('\\resources\\app.asar', '');
+ipcMain.on('OPEN_DOC', (event, url) => {
   let winPDF = new BrowserWindow({ width: 800, height: 600 })
   winPDF.setTitle("Documentation IPNEO")
   winPDF.maximize();
   winPDF.setMenuBarVisibility(false);
   PDFWindow.addSupport(winPDF);
-  winPDF.loadURL(pdfPath);
+  winPDF.loadURL(url);
 });
 
 // Fonction reçue de CMD.INSTALL_AND_REBOOT

@@ -47,6 +47,11 @@ window.EVENT_SYNC_NOT_ALLOWED_ERROR="EVENT_SYNC_NOT_ALLOWED_ERROR";
  */
 window.EVENT_WEB_SYNC_LOGO_READY="EVENT_WEB_SYNC_LOGO_READY";
 /**
+ * Quand le mode d'emploi est prêt, l'argument est l'url locale du pdf
+ * @type {string}
+ */
+window.EVENT_WEB_SYNC_MODE_EMPLOI_READY="EVENT_WEB_SYNC_MODE_EMPLOI_READY";
+/**
  * Quand le un contenu est prêt, l'argument est le json du contenu
  * @type {string}
  */

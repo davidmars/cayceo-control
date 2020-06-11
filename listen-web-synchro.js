@@ -82,6 +82,13 @@ sync.on(EVENT_WEB_SYNC_LOGO_READY,function(logoUrl){
     //Affiche le logo
     ui.layout.setLogo(logoUrl);
 });
+/**
+ * Quand le mode d'emploi est pret à être affiché
+ */
+sync.on(EVENT_WEB_SYNC_MODE_EMPLOI_READY,function(){
+    //Affiche le bouton mode d'emploi
+    ui.activeModeEmploi();
+});
 sync.on(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,function(apkLocalPath){
     stats.pageView(EVENT_WEB_SYNC_NEW_APK_AVAILABLE+"/"+apkLocalPath);
     ui.log(`Un nouvel APK vient d'être téléchargé ${apkLocalPath}`);
