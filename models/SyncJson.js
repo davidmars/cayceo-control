@@ -50,6 +50,16 @@ export default class SyncJson{
                  */
                 "localFile": "logo/etc...jpg"
             },
+            "qrcode": {
+                /**
+                 * Chemin serveur du qrcode
+                 */
+                "serverFile": "http://etc...",
+                /**
+                 * Chemin local du qrcode
+                 */
+                "localFile": "doc/etc...png"
+            },
             "modeemploi": {
                 /**
                  * Chemin serveur du mode d'emploi

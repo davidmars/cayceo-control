@@ -27,17 +27,6 @@ export default class Contenu{
          */
         this.localFile="";
         /**
-         *
-         * @type {string}
-         */
-        this.localFileAbsolute="";
-        /**
-         *
-         * @type {boolean}
-         */
-        this.localFileAbsolute_downloaded=false;
-
-        /**
          * @deprecated
          * @type {string}
          */
@@ -73,6 +62,17 @@ export default class Contenu{
          * @type {boolean}
          */
         this.localThumbNoResizeAbsolute_downloaded=false;
+
+        /**
+         * Texte court de description du contenu
+         * @type {string}
+         */
+        this.short="";
+        /**
+         *
+         * @type {string} durée en secondes du contenu
+         */
+        this.duration="";
 
 
 

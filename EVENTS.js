@@ -47,6 +47,11 @@ window.EVENT_SYNC_NOT_ALLOWED_ERROR="EVENT_SYNC_NOT_ALLOWED_ERROR";
  */
 window.EVENT_WEB_SYNC_LOGO_READY="EVENT_WEB_SYNC_LOGO_READY";
 /**
+ * Quand le qrcode est prêt, l'argument est l'url locale du qrcode
+ * @type {string}
+ */
+window.EVENT_WEB_SYNC_QRCODE_READY="EVENT_WEB_SYNC_QRCODE_READY";
+/**
  * Quand le mode d'emploi est prêt, l'argument est l'url locale du pdf
  * @type {string}
  */

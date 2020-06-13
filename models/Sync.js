@@ -116,11 +116,16 @@ class Sync extends EventEmitter{
         let me=this;
 
 
-        //Quand un fichier est signélé comme existant...
+        //Quand un fichier est signalé comme existant...
         ui.on("EVENT_FILE_EXISTS",
             /** @param {FileCell} dFile */
             function(dFile){
                 switch (true) {
+
+                    //nouveau qrcode
+                    case dFile.isQrcode():
+                        me.emit(EVENT_WEB_SYNC_QRCODE_READY,machine.appStoragePath+"/"+dFile.path);
+                        break;
 
                     //nouveau logo
                     case dFile.isLogo():
@@ -336,6 +341,11 @@ class Sync extends EventEmitter{
         logoRegie.fileHead().isLogo=true;
         logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getLogo().localFile)?1:-1;
 
+        //référence le qrcode
+        let qrcode=ui.devicesTable.getDeviceFile("régie",me.getQrcode().localFile);
+        qrcode.fileHead().serverPath=me.getQrcode().serverFile;
+        qrcode.fileHead().isQrCode=true;
+        qrcode.exists=fs.existsSync(machine.appStoragePath+"/"+me.getQrcode().localFile)?1:-1;
 
         //référence le mode d'emploi
         if(me.getModeEmploi().localFile){
@@ -737,6 +747,9 @@ class Sync extends EventEmitter{
     }
     getLogo(){
         return this._data.json.logomachine;
+    }
+    getQrcode(){
+        return this._data.json.qrcode;
     }
     getModeEmploi(){
         return this._data.json.modeemploi;

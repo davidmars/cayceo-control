@@ -2,7 +2,6 @@
 // be executed in the renderer process for that window.
 // All of the Node.js APIs are available in this process.
 
-const FileSystemUtils = require('./utils/FileSystemUtils');
 
 const electron = require('electron');
 const remote = electron.remote;
@@ -11,6 +10,7 @@ const isDevelopment = process.mainModule.filename.indexOf('app.asar') === -1;
 const Conf=                 require("./utils/Conf");
 const Machine =             require('./utils/Machine.js');
 const Sync=                 require("./models/Sync");
+const DevicesWebService=                 require("./models/DevicesWebService");
 const CasqueModelsManager=    require("./models/CasqueModelsManager");
 const Wifi=    require("./models/Wifi");
 const Stats=    require("./Stats");
@@ -86,6 +86,12 @@ machine.on(EVENT_READY,function(){
         machine
     );
     require("./listen-web-synchro");
+
+    //pour ipneo remote
+    window.devicesWebService=new DevicesWebService(
+        window.conf.serverRoot+"/v/ipneo-remote/api/set/machine-status",
+        machine
+    );
 
     //casques
     window.casquesManager=new CasqueModelsManager(machine);

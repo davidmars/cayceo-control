@@ -83,6 +83,13 @@ sync.on(EVENT_WEB_SYNC_LOGO_READY,function(logoUrl){
     ui.layout.setLogo(logoUrl);
 });
 /**
+ * Quand le qrcode est pret à être affiché
+ */
+sync.on(EVENT_WEB_SYNC_QRCODE_READY,function(qrUrl){
+    //Affiche le logo
+    ui.layout.setQrcode(qrUrl);
+});
+/**
  * Quand le mode d'emploi est pret à être affiché
  */
 sync.on(EVENT_WEB_SYNC_MODE_EMPLOI_READY,function(){
@@ -109,7 +116,8 @@ sync.on(EVENT_WEB_SYNC_CONTENU_READY,
         `${machine.appStoragePath}/${contenu.localThumbNoResize}`,
         contenu.localFile,
         contenu.duration,
-        contenu.short
+        contenu.short,
+        contenu.serverThumbNoResize
     );
     //fenêtre de logs du film
     f.setDetails(contenu);
