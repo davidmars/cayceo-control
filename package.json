@@ -1,6 +1,6 @@
 {
-  "name": "cayceo-control",
-  "version": "0.5.8",
+  "name": "jukeboxvr",
+  "version": "0.6.3",
   "description": "L'interface de contrôle d'Ipneo",
   "main": "main.js",
   "scripts": {
@@ -12,7 +12,6 @@
   "repository": "https://github.com/davidmars/cayceo-control",
   "keywords": [
     "jukeboxvr",
-    "cayceo",
     "virtual reality",
     "vr"
   ],
@@ -40,8 +39,12 @@
   "build": {
     "appId": "com.github.davidmars.cayceo-control",
     "win": {
-      "publish": [
-        "github"
+      "publish":[
+        {
+          "provider": "github",
+          "owner": "CerDev",
+          "repo": "jukeboxvr.updates"
+        }
       ],
       "asar": true,
       "extraFiles": [

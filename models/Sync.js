@@ -452,6 +452,11 @@ class Sync extends EventEmitter{
                     for (let existing of files){
                         ui.devicesTable.getDeviceFile(casque.ip,existing).exists=1;
                     }
+                }else{
+                    console.error("adb list files vide?");
+                    for(let path in ui.devicesTable.filesHeadCells){
+                        ui.devicesTable.getDeviceFile(casque.ip,path).exists=-1;
+                    }
                 }
             }
             );
