@@ -74,6 +74,17 @@ export default class Contenu{
          */
         this.duration="";
 
+        this.image={
+            "serverFile":"",
+            "localFile":"",
+            "bytes":0
+        };
+        this.file={
+            "serverFile":"",
+            "localFile":"",
+            "bytes":0
+        };
+
 
 
 

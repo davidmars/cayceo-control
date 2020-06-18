@@ -340,33 +340,42 @@ class Sync extends EventEmitter{
             fileRegie.shouldExists=-1;
         }
 
+        let fff;
         //référence le logo
-        let logoRegie=ui.devicesTable.getDeviceFile("régie",me.getLogo().localFile);
-        logoRegie.fileHead().serverPath=me.getLogo().serverFile;
+        fff=me.getLogo();
+        let logoRegie=ui.devicesTable.getDeviceFile("régie",fff.localFile);
+        logoRegie.fileHead().serverPath=fff.serverFile;
         logoRegie.fileHead().isLogo=true;
-        logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getLogo().localFile)?1:-1;
+        logoRegie.fileHead().bytes=fff.bytes;
+        logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+fff.localFile)?1:-1;
 
         //référence le qrcode
-        if(me.getQrcode()){
-            let qrcode=ui.devicesTable.getDeviceFile("régie",me.getQrcode().localFile);
-            qrcode.fileHead().serverPath=me.getQrcode().serverFile;
+        fff=me.getQrcode();
+        if(fff){
+            let qrcode=ui.devicesTable.getDeviceFile("régie",fff.localFile);
+            qrcode.fileHead().serverPath=fff.serverFile;
             qrcode.fileHead().isQrCode=true;
-            qrcode.exists=fs.existsSync(machine.appStoragePath+"/"+me.getQrcode().localFile)?1:-1;
+            qrcode.fileHead().bytes=fff.bytes;
+            qrcode.exists=fs.existsSync(machine.appStoragePath+"/"+fff.localFile)?1:-1;
         }
 
         //référence le mode d'emploi
-        if(me.getModeEmploi().localFile){
-            let modeEmploi=ui.devicesTable.getDeviceFile("régie",me.getModeEmploi().localFile);
-            modeEmploi.fileHead().serverPath=me.getModeEmploi().serverFile;
+        fff=me.getModeEmploi();
+        if(fff.localFile){
+            let modeEmploi=ui.devicesTable.getDeviceFile("régie",fff.localFile);
+            modeEmploi.fileHead().serverPath=fff.serverFile;
             modeEmploi.fileHead().isModeEmploi=true;
-            modeEmploi.exists=fs.existsSync(machine.appStoragePath+"/"+me.getModeEmploi().localFile)?1:-1;
+            modeEmploi.fileHead().bytes=fff.bytes;
+            modeEmploi.exists=fs.existsSync(machine.appStoragePath+"/"+fff.localFile)?1:-1;
         }
 
         //référence l'apk
-        let apkRegie=ui.devicesTable.getDeviceFile("régie",me.getCasqueApk().localFile);
-        apkRegie.fileHead().serverPath=me.getCasqueApk().serverFile;
+        fff=me.getCasqueApk();
+        let apkRegie=ui.devicesTable.getDeviceFile("régie",fff.localFile);
+        apkRegie.fileHead().serverPath=fff.serverFile;
         apkRegie.fileHead().isApk=true;
-        apkRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getCasqueApk().localFile)?1:-1;
+        apkRegie.fileHead().bytes=fff.bytes;
+        apkRegie.exists=fs.existsSync(machine.appStoragePath+"/"+fff.localFile)?1:-1;
 
         //fichiers contenus...
         for(let contenu of this._data.json.contenus){
@@ -375,22 +384,25 @@ class Sync extends EventEmitter{
                 film.setTitle(contenu.name);
             }
             //thumbnail
-            let thumbnail=ui.devicesTable.getDeviceFile("régie",contenu.localThumbNoResize);
-            thumbnail.fileHead().serverPath=contenu.serverThumbNoResize;
+            let thumbnail=ui.devicesTable.getDeviceFile("régie",contenu.image.localFile);
+            thumbnail.fileHead().serverPath=contenu.image.serverFile;
+            thumbnail.fileHead().contenuName="thumbnail "+contenu.name;
             thumbnail.fileHead().isThumbnail=true;
             thumbnail.fileHead().contenu=contenu;
-            thumbnail.fileHead().contenuName="thumbnail "+contenu.name;
+            thumbnail.fileHead().bytes=contenu.image.bytes;
+
             thumbnail.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localThumbNoResize)?1:-1;
 
             //gros fichier
-            let contenuFile=ui.devicesTable.getDeviceFile("régie",contenu.localFile);
-            contenuFile.fileHead().serverPath=contenu.serverFile;
+            let contenuFile=ui.devicesTable.getDeviceFile("régie",contenu.file.localFile);
+            contenuFile.fileHead().serverPath=contenu.file.serverFile;
             contenuFile.fileHead().contenuName=contenu.name;
             contenuFile.fileHead().isContenu=true;
             contenuFile.fileHead().contenu=contenu;
             contenuFile.shouldExists=1;
             contenuFile.fileHead().disabled=contenu.disabled;
-            contenuFile.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.localFile)?1:-1;
+            contenuFile.fileHead().bytes=contenu.file.bytes;
+            contenuFile.exists=fs.existsSync(machine.appStoragePath+"/"+contenu.file.localFile)?1:-1;
 
         }
 

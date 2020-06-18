@@ -61,7 +61,11 @@ export default class SyncJson{
                 /**
                  * Chemin local du logo
                  */
-                "localFile": "logo/etc...jpg"
+                "localFile": "logo/etc...jpg",
+                /**
+                 * Poids du fichier
+                 */
+                "bytes":0
             },
             "qrcode": {
                 /**
@@ -71,7 +75,11 @@ export default class SyncJson{
                 /**
                  * Chemin local du qrcode
                  */
-                "localFile": "doc/etc...png"
+                "localFile": "doc/etc...png",
+                /**
+                 * Poids du fichier
+                 */
+                "bytes":0
             },
             "modeemploi": {
                 /**
@@ -81,7 +89,11 @@ export default class SyncJson{
                 /**
                  * Chemin local du mode d'emploi
                  */
-                "localFile": "doc/etc...pdf"
+                "localFile": "doc/etc...pdf",
+                /**
+                 * Poids du fichier
+                 */
+                "bytes":0
             },
             "casquesapk": {
                 /**
@@ -91,7 +103,11 @@ export default class SyncJson{
                 /**
                  * Chemin local de l'apk
                  */
-                "localFile": "logo/etc...jpg"
+                "localFile": "logo/etc...jpg",
+                /**
+                 * Poids du fichier
+                 */
+                "bytes":0
             },
             /**
              * Liste des contenus
