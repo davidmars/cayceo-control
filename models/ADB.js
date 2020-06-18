@@ -98,7 +98,7 @@ class ADB extends EventEmitter{
      * @param {boolean} logs
      * @param {boolean} parallel si true le process peut se lancer même si un autre est en cours
      */
-    run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs=true,parallel=false) {
+    run(cmd, onCompleteCb,onProgressCb,onErrorCb,logs=false,parallel=false) {
         let me=this;
         if(!parallel){
             if(me.processQueue.length> 2 ){
