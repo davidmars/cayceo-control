@@ -36,7 +36,7 @@ class ADB extends EventEmitter{
 
         let exe="platform-tools_r28.0.0-windows/platform-tools/adb.exe";
         let exePath=path.join(app.getAppPath(),exe).replace('\\resources\\app.asar', '');
-        console.error("exePath",exePath);
+        console.log("exePath",exePath);
         /**
          * Chemin vers le programme adb
          * @type {string}
