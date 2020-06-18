@@ -330,6 +330,11 @@ class Sync extends EventEmitter{
             ipcRenderer.send('ALLOW_PRE_RELEASE',false)
         }
 
+        //options d'ergonomie
+        ui.ipneoRemoteEnabled=this._data.json.jukebox.ipneoremote;
+        ui.btnSelectAllEnabled=this._data.json.jukebox.btnselectall;
+        ui.btnPlayAllEnabled=this._data.json.jukebox.btnplayall;
+
         //marque tous les  fichiers comme à supprimer (les rétablira ensuite)
         for(let fileRegie of ui.devicesTable.regie().filesCellsArray()){
             fileRegie.shouldExists=-1;
@@ -342,10 +347,12 @@ class Sync extends EventEmitter{
         logoRegie.exists=fs.existsSync(machine.appStoragePath+"/"+me.getLogo().localFile)?1:-1;
 
         //référence le qrcode
-        let qrcode=ui.devicesTable.getDeviceFile("régie",me.getQrcode().localFile);
-        qrcode.fileHead().serverPath=me.getQrcode().serverFile;
-        qrcode.fileHead().isQrCode=true;
-        qrcode.exists=fs.existsSync(machine.appStoragePath+"/"+me.getQrcode().localFile)?1:-1;
+        if(me.getQrcode()){
+            let qrcode=ui.devicesTable.getDeviceFile("régie",me.getQrcode().localFile);
+            qrcode.fileHead().serverPath=me.getQrcode().serverFile;
+            qrcode.fileHead().isQrCode=true;
+            qrcode.exists=fs.existsSync(machine.appStoragePath+"/"+me.getQrcode().localFile)?1:-1;
+        }
 
         //référence le mode d'emploi
         if(me.getModeEmploi().localFile){

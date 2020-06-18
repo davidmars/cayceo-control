@@ -15,6 +15,7 @@ export default class SyncJson{
              *
              */
             "ganalytics": null,
+
             /**
              *
              */
@@ -38,7 +39,19 @@ export default class SyncJson{
                 /**
                  * La régie doit elle afficher les catégories ?
                  */
-                "usetags": true
+                "usetags": true,
+                /**
+                 * Activer ou non ipneo remote (le qr code)
+                 */
+                "ipneoremote":false,
+                /**
+                 * Activer ou non le bouton demarrer la lecture
+                 */
+                "btnplayall":false,
+                /**
+                 * Activer ou pas le bouton selectionner tous les casques
+                 */
+                "btnselectall":false,
             },
             "logomachine": {
                 /**
