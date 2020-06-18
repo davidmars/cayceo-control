@@ -173,7 +173,6 @@ class Sync extends EventEmitter{
                 switch (true) {
                     case dFile.isApk():
                         if(dFile.isRegie()){
-                            alert("new apk");
                             me.emit(EVENT_WEB_SYNC_NEW_APK_AVAILABLE,machine.appStoragePath+"/"+dFile.path);
                         }
                         break;
