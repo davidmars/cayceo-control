@@ -320,10 +320,10 @@ class ADB extends EventEmitter{
         let path=this.devicePath(file);
         this.fileExists(deviceId,file,function(exists){
             if(exists){
-                console.error("EXISTE DEJA "+file)
+                //console.error("EXISTAIT "+file)
                 me.runDevice(deviceId,"shell rm "+path,cb);
             }else{
-                console.error("EXISTAIT PAS "+file)
+                //console.error("EXISTAIT PAS "+file)
                 cb();
             }
         })
