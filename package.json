@@ -18,7 +18,7 @@
   "author": "davidmars",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "^6.1.12",
+    "electron": "^9.1.0",
     "electron-builder": "^21.2.0"
   },
   "dependencies": {
